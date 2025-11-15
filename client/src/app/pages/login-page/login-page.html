@@ -1,0 +1,25 @@
+<div class="login-container">
+  @if (isLoading()) {
+    <p>Загрузка кошелька...</p>
+  } @else if (isAuthenticated()) {
+    <div class="authenticated">
+      <p><strong>Вы вошли:</strong> {{ publicKey()?.toBase58() }}</p>
+      <button (click)="logout()">Выйти</button>
+    </div>
+  } @else if (isWalletConnected()) {
+    <div class="connected">
+      <p>Подключено: {{ publicKey()?.toBase58() }}</p>
+      <button (click)="signIn()">Войти</button>
+      <button (click)="logout()">Отключить</button>
+    </div>
+  } @else {
+    <div class="disconnected">
+      <button (click)="connectWallet()">Подключить Phantom</button>
+      @if (!hasPhantom()) {
+        <p style="color: red; margin-top: 10px;">
+          Установите <a href="https://phantom.app" target="_blank">Phantom</a>
+        </p>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,21 @@
+.footer {
+  font-size: 1.25rem;
+  box-sizing: border-box;
+
+  &__wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(173, 216, 230, 0.5);
+    padding: 1rem 1rem;
+  }
+  a {
+    text-decoration: none;
+  }
+
+  img {
+    box-sizing: border-box;
+    position: relative;
+    top: 2px;
+  }
+}
