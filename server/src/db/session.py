@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from contextlib import asynccontextmanager
 
-from src.config.settings import settings
+from config.settings import settings
 
 
 engine = create_async_engine(
