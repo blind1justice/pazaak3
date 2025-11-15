@@ -1,0 +1,57 @@
+<div class="audio-player-container">
+  <div class="top-bar">
+    <div class="track-info">
+      <div class="cover" [style.background-image]="'url(' + currentTrack().cover + ')'"></div>
+      <div class="details">
+        <div class="title">{{ currentTrack().title }}</div>
+        <div class="artist">{{ currentTrack().artist }}</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button mat-icon-button (click)="previous()" [disabled]="!hasPrevious()">
+        <mat-icon>skip_previous</mat-icon>
+      </button>
+      <button mat-icon-button color="primary" (click)="togglePlay()">
+        <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon>
+      </button>
+      <button mat-icon-button (click)="next()" [disabled]="!hasNext()">
+        <mat-icon>skip_next</mat-icon>
+      </button>
+    </div>
+
+    <div class="volume-control">
+      <button mat-icon-button (click)="toggleMute()">
+        <mat-icon>{{ currentVolumeIcon() }}</mat-icon>
+      </button>
+      <mat-slider class="volume-slider">
+        <input
+          matSliderThumb
+          [value]="volume()"
+          (valueChange)="volume.set($event); setVolume()"
+          min="0" max="100" step="1" />
+      </mat-slider>
+    </div>
+  </div>
+
+  <div class="progress-bar-container">
+    <span class="time">{{ formatTime(currentTime()) }}</span>
+
+    <mat-slider class="progress-slider">
+      <input
+        matSliderThumb
+        [value]="progress()"
+        (valueChange)="seek($event)"
+        min="0" max="100" step="0.1" />
+    </mat-slider>
+
+    <span class="time">{{ formatTime(duration()) }}</span>
+  </div>
+</div>
+
+<audio #audioElement
+       [src]="currentTrack().url"
+       (timeupdate)="onTimeUpdate()"
+       (loadedmetadata)="onTimeUpdate()"
+       (ended)="onEnded()">
+</audio>
