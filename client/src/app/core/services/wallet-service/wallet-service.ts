@@ -1,4 +1,3 @@
-// wallet-service.ts
 import { Injectable, signal } from '@angular/core';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
