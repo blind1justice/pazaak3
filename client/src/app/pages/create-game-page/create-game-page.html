@@ -1,1 +1,36 @@
-<p>create-game-page works!</p>
+<div class="container">
+  <div class="content">
+    <div class="create-game__game-title">Pazaak</div>
+
+    <form class="create-game__form" [formGroup]="createGameForm" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="fill">
+        <mat-label>Room number</mat-label>
+        <input matInput formControlName="roomNumber" required />
+
+        @if (createGameForm.get('roomNumber')?.hasError('required') && createGameForm.get('roomNumber')?.touched) {
+          <mat-error>Room number is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Bid</mat-label>
+        <input matInput type="number" formControlName="bid" required min="0" />
+
+        @if (createGameForm.get('bid')?.hasError('required') && createGameForm.get('bid')?.touched) {
+          <mat-error>Bid is required</mat-error>
+        } @else if (createGameForm.get('bid')?.hasError('min')) {
+          <mat-error>Bid must be 0 or greater</mat-error>
+        }
+      </mat-form-field>
+
+    </form>
+
+    <button matButton="filled" [disabled]="createGameForm.invalid" class="action-button" (click)="onSubmit()">
+      Create game
+    </button>
+    <button matButton="elevated" routerLink="/" class="action-button">
+      Back
+    </button>
+  </div>
+</div>

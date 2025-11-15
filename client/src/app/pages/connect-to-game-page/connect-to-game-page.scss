@@ -1,0 +1,32 @@
+.content {
+  margin: 150px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.action-button {
+  font-size: 2rem;
+}
+
+.connect-to-game__game-title {
+  font-size: 4rem;
+  height: 2rem;
+  margin: 0 0 2rem 0;
+}
+
+:host ::ng-deep .action-button {
+  height: 4rem !important;
+}
+
+.connect-to-game__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+mat-form-field {
+  width: 350px;
+}

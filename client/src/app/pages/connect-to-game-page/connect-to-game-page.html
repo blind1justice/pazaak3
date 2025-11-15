@@ -1,1 +1,25 @@
-<p>connect-to-game-page works!</p>
+<div class="container">
+  <div class="content">
+    <div class="connect-to-game__game-title">Pazaak</div>
+
+    <form class="connect-to-game__form" [formGroup]="connectToGameForm" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="fill">
+        <mat-label>Room number</mat-label>
+        <input matInput formControlName="roomNumber" required />
+
+        @if (connectToGameForm.get('roomNumber')?.hasError('required') && connectToGameForm.get('roomNumber')?.touched) {
+          <mat-error>Room number is required</mat-error>
+        }
+      </mat-form-field>
+
+    </form>
+
+    <button matButton="filled" [disabled]="connectToGameForm.invalid" class="action-button" (click)="onSubmit()">
+      Connect to game
+    </button>
+    <button matButton="elevated" routerLink="/" class="action-button">
+      Back
+    </button>
+  </div>
+</div>
