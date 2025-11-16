@@ -9,6 +9,18 @@
   } @else if (isWalletConnected()) {
     <div class="connected">
       <p>Подключено: {{ publicKey()?.toBase58() }}</p>
+      <div class="nickname-input">
+        <label for="nickname">Никнейм (опционально):</label>
+        <input
+          id="nickname"
+          type="text"
+          [value]="nickname()"
+          (input)="nickname.set($any($event.target).value)"
+          placeholder="Введите никнейм"
+          maxlength="30"
+        />
+        <small>Если не указать, будет использован автоматически сгенерированный</small>
+      </div>
       <button (click)="signIn()">Войти</button>
       <button (click)="logout()">Отключить</button>
     </div>

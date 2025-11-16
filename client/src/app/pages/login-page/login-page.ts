@@ -19,6 +19,7 @@ export class LoginPage {
   isWalletConnected = signal(false);
   isAuthenticated = signal(false);
   publicKey = signal<PublicKey | null>(null);
+  nickname = signal<string>('');
 
   private subscription: any;
 
@@ -73,12 +74,15 @@ export class LoginPage {
       const signature = await wallet.signMessage(encoded);
       const signatureBase58 = bs58.encode(signature);
 
+      const nicknameValue = this.nickname().trim() || undefined;
+      
       this.authService.authenticate({
         message,
         signature: signatureBase58,
         publicKey: this.publicKey()!.toBase58()
-      }).subscribe({
+      }, nicknameValue).subscribe({
         next: () => {
+          this.nickname.set(''); // Очищаем поле после успешной авторизации
           alert('Успешный вход!');
         },
         error: (err: any) => {
@@ -95,5 +99,6 @@ export class LoginPage {
   logout() {
     this.authService.logout();
     this.walletService.disconnect();
+    this.nickname.set(''); // Очищаем поле при выходе
   }
 }
