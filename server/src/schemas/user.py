@@ -21,3 +21,14 @@ class UserSchemaRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserAuthSchema(BaseModel):
+    nickname: str
+    walletId: str
+
+
+class TokenSchema(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserSchemaRead

@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 import uvicorn
-from api import user, game
+from api import user, game, auth
 
 app = FastAPI()
 app.include_router(user.router)
 app.include_router(game.router)
+app.include_router(auth.router)
 
 
 @app.get('/')
