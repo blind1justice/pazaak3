@@ -29,3 +29,13 @@ class UserRepository(SQLAclhemyRepository):
                 return row[0]
             else:
                 return None
+
+    async def get_by_wallet_id(self, wallet_id: str):
+        async with async_session() as session:
+            query = select(self.model).where(self.model.walletId == wallet_id)
+            res = await session.execute(query)
+            row = res.one_or_none()
+            if row:
+                return row[0]
+            else:
+                return None

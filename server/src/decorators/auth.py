@@ -7,8 +7,8 @@ from schemas.user import UserSchemaRead
 
 def require_auth(func):
     """
-    Декоратор для проверки авторизации.
-    Автоматически добавляет параметр current_user с проверкой JWT токена.
+    Декоратор для проверки авторизации через Phantom.
+    Автоматически добавляет параметр current_user с проверкой подписи Phantom.
     """
     @wraps(func)
     async def wrapper(*args, **kwargs):

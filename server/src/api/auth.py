@@ -1,31 +1,20 @@
 from fastapi import APIRouter, Depends
-from schemas.user import UserAuthSchema, TokenSchema
+from schemas.user import AuthResponseSchema, AuthenticateSchema
 from services.user_service import UserService
 from api.depedencies import user_service
 
 router = APIRouter(prefix='/api/auth', tags=['Auth'])
 
 
-@router.post("/register", response_model=TokenSchema)
-async def register(
-    user_data: UserAuthSchema,
+@router.post("/authenticate", response_model=AuthResponseSchema)
+async def authenticate(
+    auth_data: AuthenticateSchema,
     user_service: UserService = Depends(user_service)
 ):
     """
-    Регистрация нового пользователя.
-    Принимает nickname и walletId, создает пользователя и возвращает JWT токен.
+    Объединенный эндпоинт для авторизации/регистрации через Phantom.
+    Если пользователь существует - выполняет вход, если нет - регистрацию.
+    Принимает walletId, message, signature и опциональный nickname.
     """
-    return await user_service.register(user_data)
-
-
-@router.post("/login", response_model=TokenSchema)
-async def login(
-    user_data: UserAuthSchema,
-    user_service: UserService = Depends(user_service)
-):
-    """
-    Вход пользователя.
-    Принимает nickname и walletId, проверяет их и возвращает JWT токен.
-    """
-    return await user_service.login(user_data)
+    return await user_service.authenticate(auth_data)
 

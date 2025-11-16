@@ -73,7 +73,7 @@ export class LoginPage {
       const signature = await wallet.signMessage(encoded);
       const signatureBase58 = bs58.encode(signature);
 
-      this.authService.signIn({
+      this.authService.authenticate({
         message,
         signature: signatureBase58,
         publicKey: this.publicKey()!.toBase58()
@@ -83,7 +83,8 @@ export class LoginPage {
         },
         error: (err: any) => {
           console.error(err);
-          alert('Ошибка входа: ' + err.message);
+          const errorMessage = err?.error?.detail || err?.message || 'Ошибка входа';
+          alert('Ошибка входа: ' + errorMessage);
         }
       });
     } catch (err) {

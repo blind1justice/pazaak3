@@ -23,12 +23,14 @@ class UserSchemaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserAuthSchema(BaseModel):
-    nickname: str
+class AuthenticateSchema(BaseModel):
+    """Объединенная схема для авторизации/регистрации через Phantom"""
     walletId: str
+    message: str  # Сообщение, которое было подписано
+    signature: str  # Подпись сообщения в формате base58
+    nickname: Optional[str] = None  # Опциональный nickname для регистрации
 
 
-class TokenSchema(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+class AuthResponseSchema(BaseModel):
     user: UserSchemaRead
+    token: str  # JWT токен для последующих запросов

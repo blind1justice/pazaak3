@@ -1,11 +1,8 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, status, Header
 from services.user_service import UserService
 from services.game_service import GameService
 from utils.jwt import verify_token
 from schemas.user import UserSchemaRead
-
-security = HTTPBearer()
 
 
 def user_service():
@@ -17,31 +14,44 @@ def game_service():
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    authorization: str = Header(..., description="JWT token in format 'Bearer <token>'"),
     user_service: UserService = Depends(user_service)
 ) -> UserSchemaRead:
     """
     Dependency для проверки JWT токена и получения текущего пользователя.
+    Требует заголовок:
+    - Authorization: JWT токен в формате 'Bearer <token>'
     """
-    token = credentials.credentials
-    payload = verify_token(token)
-    
-    if payload is None:
+    # Извлекаем токен из заголовка Authorization
+    if not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
+            detail="Invalid authorization header format. Expected 'Bearer <token>'",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_id = payload.get("sub")
-    if user_id is None:
+    token = authorization.replace("Bearer ", "").strip()
+    
+    # Проверяем JWT токен
+    payload = verify_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Извлекаем wallet_id из токена
+    wallet_id = payload.get("wallet_id")
+    if not wallet_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = await user_service.get_one(int(user_id))
+    # Ищем пользователя по walletId
+    user = await user_service.repo.get_by_wallet_id(wallet_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -49,4 +59,4 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    return user
+    return user.to_read_model()

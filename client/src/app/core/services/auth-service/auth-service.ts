@@ -1,14 +1,18 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { delay, tap } from 'rxjs/operators';
-import bs58 from 'bs58';
-import * as nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 export interface AuthResponse {
+  user: {
+    id: number;
+    nickname: string;
+    walletId: string;
+    created_at: string;
+    updated_at: string;
+  };
   token: string;
-  wallet: string;
-  expiresIn: string;
 }
 
 export interface SignInPayload {
@@ -23,6 +27,8 @@ export interface SignInPayload {
 export class AuthService {
   private readonly STORAGE_KEY_JWT = 'jwt';
   private readonly STORAGE_KEY_WALLET = 'wallet';
+  private readonly baseUrl = environment.apiUrl;
+  private readonly httpClient = inject(HttpClient);
 
   // Состояние аутентификации
   private authState = new BehaviorSubject<boolean>(false);
@@ -36,42 +42,33 @@ export class AuthService {
     this.restoreSession();
   }
 
-  // === Моковая верификация (имитация бэкенда) ===
-  signIn(payload: SignInPayload): Observable<AuthResponse> {
-    console.log('%c[AuthService] Моковая верификация подписи...', 'color: purple');
+  // === Авторизация/Регистрация через Phantom (объединенный метод) ===
+  authenticate(payload: SignInPayload, nickname?: string): Observable<AuthResponse> {
+    console.log('%c[AuthService] Отправка запроса на авторизацию/регистрацию...', 'color: purple');
 
-    // 1. Декодируем подпись
-    let signature: Uint8Array;
-    try {
-      signature = bs58.decode(payload.signature);
-    } catch {
-      return throwError(() => new Error('Invalid signature format'));
-    }
-
-    // 2. Верифицируем подпись
-    const publicKey = new PublicKey(payload.publicKey);
-    const messageBytes = new TextEncoder().encode(payload.message);
-    const isValid = nacl.sign.detached.verify(messageBytes, signature, publicKey.toBytes());
-
-    if (!isValid) {
-      return throwError(() => new Error('Invalid signature'));
-    }
-
-    // 3. Имитация задержки сервера
-    const mockToken = 'mock-jwt-' + Math.random().toString(36).substr(2, 9);
-    const response: AuthResponse = {
-      token: mockToken,
-      wallet: payload.publicKey,
-      expiresIn: '7d'
+    const authData: any = {
+      walletId: payload.publicKey,
+      message: payload.message,
+      signature: payload.signature
     };
 
-    return of(response).pipe(
-      delay(800), // имитация сети
+    // Добавляем nickname только если он передан
+    if (nickname) {
+      authData.nickname = nickname;
+    }
+
+    return this.httpClient.post<AuthResponse>(`${this.baseUrl}/auth/authenticate`, authData).pipe(
       tap(res => {
-        console.log('%c[AuthService] Успешный вход (мок)', 'color: lime');
-        this.saveSession(res.token, res.wallet);
+        console.log('%c[AuthService] Успешная авторизация', 'color: lime');
+        this.saveSession(res.token, res.user.walletId);
         this.authState.next(true);
-        this.userWallet.next(res.wallet);
+        this.userWallet.next(res.user.walletId);
+      }),
+      catchError(err => {
+        console.error('%c[AuthService] Ошибка авторизации', 'color: red', err);
+        this.authState.next(false);
+        this.userWallet.next(null);
+        return throwError(() => err);
       })
     );
   }
