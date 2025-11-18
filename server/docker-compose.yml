@@ -14,8 +14,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: pazaak_redis
+    command: redis-server --requirepass pazaak3_redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   postgres_data:
+  redis_data:
