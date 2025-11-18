@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from schemas.game import GameSchemaAdd, GameSchemaUpdate
 from schemas.user import UserSchemaRead
 from services.game_service import GameService
-from api.depedencies import game_service
 from decorators.auth import require_auth
+from api.dependencies import game_service
 
 
 router = APIRouter(prefix='/api/games', tags=['Games'])

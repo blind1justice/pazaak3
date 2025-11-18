@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = 'HS256'
     jwt_access_token_expire_minutes: int = 30
 
+    redis_host: str = 'localhost'
+    redis_port: int = 6379
+    redis_password: str = 'pazaak3_redis'
+
     @property
     def database_url(self) -> str:
         return (
@@ -18,6 +22,7 @@ class Settings(BaseSettings):
             f"{self.db_password}@{self.db_host}:"
             f"{self.db_port}/{self.db_name}"
         )
+
 
 
 settings = Settings()

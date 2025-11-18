@@ -1,7 +1,7 @@
 from functools import wraps
 import inspect
 from fastapi import Depends
-from api.depedencies import get_current_user
+from api.dependencies import get_current_user
 from schemas.user import UserSchemaRead
 
 
