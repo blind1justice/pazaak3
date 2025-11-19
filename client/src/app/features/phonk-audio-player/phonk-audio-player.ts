@@ -45,6 +45,12 @@ export class PhonkAudioPlayer {
       artist: 'INTERWORLD',
       cover: '/assets/covers/INTERWORLD-RAPTURE.jpg'
     },
+    {
+      url: '/assets/music/Shaman - Я Русский.mp3',
+      title: 'Я русский',
+      artist: 'Shaman',
+      cover: '/assets/covers/zzz.png'
+    },
   ];
 
   currentTrackIndex = signal(0);
@@ -69,7 +75,6 @@ export class PhonkAudioPlayer {
       this.resetProgress();
     });
 
-    // Иконка громкости
     effect(() => {
       const vol = this.volume();
       if (this.isMuted()) {
