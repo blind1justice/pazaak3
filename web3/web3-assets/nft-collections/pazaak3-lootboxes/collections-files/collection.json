@@ -1,0 +1,17 @@
+{
+  "name": "Pazaak3 Cases",
+  "symbol": "PZK3-CASE",
+  "description": "Pazaak3 game cases",
+  "seller_fee_basis_points": 10,
+  "image": "collection.png",
+  "attributes": [],
+  "properties": {
+    "files": [
+      {
+        "uri": "collection.png",
+        "type": "image/png"
+      }
+    ],
+    "category": "image"
+  }
+}

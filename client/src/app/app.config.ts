@@ -1,9 +1,17 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  importProvidersFrom,
+  provideBrowserGlobalErrorListeners,
+  provideZoneChangeDetection
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { provideHttpClient } from '@angular/common/http';
+import { SocketIoModule } from 'ngx-socket-io';
+import { socketConfig } from './core/services/socket-service/socket-service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -11,5 +19,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({eventCoalescing: true}),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes),
+    importProvidersFrom(SocketIoModule.forRoot(socketConfig))
   ]
 };

@@ -1,0 +1,17 @@
+{
+  "name": "Pazaak3",
+  "symbol": "PZK3",
+  "description": "Pazaak3 game items",
+  "seller_fee_basis_points": 100,
+  "image": "collection.png",
+  "attributes": [],
+  "properties": {
+    "files": [
+      {
+        "uri": "collection.png",
+        "type": "image/png"
+      }
+    ],
+    "category": "image"
+  }
+}

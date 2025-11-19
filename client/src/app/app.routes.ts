@@ -6,6 +6,7 @@ import { CreateGamePage } from './pages/create-game-page/create-game-page';
 import { ConnectToGamePage } from './pages/connect-to-game-page/connect-to-game-page';
 import { CardCollectionPage } from './pages/card-collection-page/card-collection-page';
 import { ProfilePage } from './pages/profile-page/profile-page';
+import { GamePage } from './pages/game-page/game-page';
 
 export const routes: Routes = [
   {
@@ -35,6 +36,10 @@ export const routes: Routes = [
       {
         path: 'profile',
         component: ProfilePage,
+      },
+      {
+        path: 'game/:gameId',
+        component: GamePage,
       }
     ]
   },

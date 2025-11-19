@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatButton } from '@angular/material/button';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ICreateGameForm } from './create-game-form';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
@@ -9,6 +9,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { CreateRoomDto } from '../../core/models/create-room-dto';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RoomsService } from '../../core/services/rooms-service/rooms-service';
+import { SocketService } from '../../core/services/socket-service/socket-service';
 
 @Component({
   selector: 'app-create-game-page',
@@ -24,10 +25,12 @@ import { RoomsService } from '../../core/services/rooms-service/rooms-service';
   templateUrl: './create-game-page.html',
   styleUrl: './create-game-page.scss',
 })
-export class CreateGamePage {
+export class CreateGamePage implements OnInit {
 
   private readonly snackBar = inject(MatSnackBar);
   private readonly roomsService = inject(RoomsService);
+  private readonly socketService = inject(SocketService);
+  private readonly router = inject(Router);
 
   createGameForm = new FormGroup<ICreateGameForm>({
     roomNumber: new FormControl('', {
@@ -39,6 +42,13 @@ export class CreateGamePage {
       validators: [Validators.required, Validators.min(0)],
     }),
   });
+
+  ngOnInit(): void {
+    this.socketService.on<{ gameId: "123" }>('startGame').subscribe((data) => {
+      console.log(data);
+      this.router.navigate(['/game', data.gameId]);
+    });
+  }
 
   onSubmit() {
     if (this.createGameForm.valid) {
@@ -56,8 +66,7 @@ export class CreateGamePage {
           this.showMessage(err.error.detail || 'An error occurred while creating the room');
         }
       });
-    }
-    else {
+    } else {
       this.createGameForm.markAllAsTouched();
       return;
     }

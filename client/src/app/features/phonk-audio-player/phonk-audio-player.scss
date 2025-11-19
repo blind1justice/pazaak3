@@ -1,14 +1,14 @@
 .audio-player-container {
   background: #1e1e1e;
   color: white;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0.25rem 1rem;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
   font-family: 'Roboto', sans-serif;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-width: 500px;
-  max-width: 500px;
+  min-width: 550px;
+  max-width: 550px;
   border-radius: 1rem;
 }
 
