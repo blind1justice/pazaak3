@@ -2,11 +2,11 @@
   "name": "Pazaak",
   "symbol": "PZK",
   "description": "pazaak game token",
-  "image": "https://github.com/blind1justice/pazaak3/blob/main/web3/web3-assets/token/pzk-token.png",
+  "image": "https://github.com/blind1justice/pazaak3/blob/main/web3/web3-assets/token/pzk-token.png?raw=true",
   "properties": {
     "files": [
       {
-        "uri": "https://github.com/blind1justice/pazaak3/blob/main/web3/web3-assets/token/pzk-token.png",
+        "uri": "https://github.com/blind1justice/pazaak3/blob/main/web3/web3-assets/token/pzk-token.png?raw=true",
         "type": "image/png"
       }
     ],
