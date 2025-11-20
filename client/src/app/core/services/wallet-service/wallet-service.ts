@@ -1,61 +1,46 @@
 import { Injectable, signal } from '@angular/core';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 
-const network = WalletAdapterNetwork.Devnet;
-const endpoint = 'https://api.devnet.solana.com';
-const connection = new Connection(endpoint);
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class WalletService {
-  public connection = connection;
-  public wallet = new PhantomWalletAdapter();
+  private adapter = new PhantomWalletAdapter();
 
-  public walletSubject = signal<any>(null);
-  public publicKey = signal<PublicKey | null>(null);
-  public isLoading = signal(true);
+  readonly isLoading = signal(true);
+  readonly wallet = signal<PhantomWalletAdapter | null>(null);
 
   constructor() {
-    this.tryAutoConnect();
+    this.checkPhantomAndAutoConnect();
   }
 
-  private async tryAutoConnect() {
-    console.log('%c[WalletService] Попытка автоподключения...', 'color: cyan');
+  hasPhantom(): boolean {
+    return !!(window as any).solana?.isPhantom;
+  }
+
+  private async checkPhantomAndAutoConnect() {
+    if (!this.hasPhantom()) {
+      this.isLoading.set(false);
+      return;
+    }
+
     try {
-      if (this.wallet.readyState === 'Installed') {
-        await this.wallet.connect();
-        this.updateWalletState();
-        console.log('%c[WalletService] Автоподключение успешно', 'color: lime');
+      if (this.adapter.readyState === 'Installed') {
+        await this.adapter.connect();
+        this.wallet.set(this.adapter);
       }
-    } catch (err: any) {
-      if (err.name !== 'WalletNotReadyError') {
-        console.warn('%c[WalletService] Автоподключение не требуется', 'color: gray');
-      }
+    } catch (err) {
+      console.warn('Auto-connect skipped');
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  async connect(): Promise<void> {
-    await this.wallet.connect();
-    this.updateWalletState();
+  async connect() {
+    await this.adapter.connect();
+    this.wallet.set(this.adapter);
   }
 
-  async disconnect(): Promise<void> {
-    await this.wallet.disconnect();
-    this.walletSubject.set(null);
-    this.publicKey.set(null);
-  }
-
-  private updateWalletState() {
-    this.walletSubject.set(this.wallet);
-    this.publicKey.set(this.wallet.publicKey);
-  }
-
-  isConnected(): boolean {
-    return !!this.publicKey();
+  async disconnect() {
+    await this.adapter.disconnect();
+    this.wallet.set(null);
   }
 }

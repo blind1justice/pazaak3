@@ -1,23 +1,56 @@
 <div class="login-container">
   @if (isLoading()) {
-    <p>Загрузка кошелька...</p>
-  } @else if (isAuthenticated()) {
-    <div class="authenticated">
-      <p><strong>Вы вошли:</strong> {{ publicKey()?.toBase58() }}</p>
-      <button (click)="logout()">Выйти</button>
-    </div>
-  } @else if (isWalletConnected()) {
-    <div class="connected">
-      <p>Подключено: {{ publicKey()?.toBase58() }}</p>
-      <button (click)="signIn()">Войти</button>
-      <button (click)="logout()">Отключить</button>
-    </div>
-  } @else {
-    <div class="disconnected">
-      <button (click)="connectWallet()">Подключить Phantom</button>
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Connecting to Phantom...</p>
+  }
+
+  @else if (isAuthenticated()) {
+    <mat-card class="status-card">
+      <mat-card-content>
+        <p><strong>Logged in as:</strong></p>
+        <p class="address">{{ publicKey() }}</p>
+        <div class="status-card-btns">
+          <button matButton="filled" routerLink="/">
+            Home
+          </button>
+          <button matButton="elevated" (click)="logout()">
+            Logout
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @else if (isWalletConnected()) {
+    <mat-card class="status-card">
+      <mat-card-header>
+        <mat-card-title>Phantom Connected</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="address">{{ publicKey() }}</p>
+        <div class="actions">
+          <button matButton="filled" (click)="signIn()">
+            Sign In
+          </button>
+          <button matButton="elevated" (click)="disconnect()">
+            Disconnect Wallet
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @else {
+    <div class="welcome-card">
+      <h1 class="game-title">Pazaak</h1>
+      <button matButton="filled" class="connect-btn" (click)="connect()">
+        Connect with Phantom
+      </button>
+
       @if (!hasPhantom()) {
-        <p style="color: red; margin-top: 10px;">
-          Установите <a href="https://phantom.app" target="_blank">Phantom</a>
+        <p class="install-hint">
+          Phantom not detected.
+          <a href="https://phantom.app" target="_blank" rel="noopener">Install Phantom</a>
         </p>
       }
     </div>

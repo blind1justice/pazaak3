@@ -1,110 +1,88 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { delay, tap } from 'rxjs/operators';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { tap, catchError, lastValueFrom } from 'rxjs';
 import bs58 from 'bs58';
-import * as nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
+import { WalletService } from "../wallet-service/wallet-service";
+import { environment } from '../../../../environments/environment';
+import { Router } from '@angular/router';
 
-export interface AuthResponse {
+interface AuthResponse {
   token: string;
-  wallet: string;
-  expiresIn: string;
+  user: { walletId: string };
 }
 
-export interface SignInPayload {
-  message: string;
-  signature: string;
-  publicKey: string;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly STORAGE_KEY_JWT = 'jwt';
-  private readonly STORAGE_KEY_WALLET = 'wallet';
+  private http = inject(HttpClient);
+  private wallet = inject(WalletService);
+  private router = inject(Router);
 
-  // Состояние аутентификации
-  private authState = new BehaviorSubject<boolean>(false);
-  private userWallet = new BehaviorSubject<string | null>(null);
-
-  // Публичные потоки
-  public isAuthenticated$ = this.authState.asObservable();
-  public userWallet$ = this.userWallet.asObservable();
+  private isAuthenticated = signal<boolean>(false)
 
   constructor() {
     this.restoreSession();
   }
 
-  // === Моковая верификация (имитация бэкенда) ===
-  signIn(payload: SignInPayload): Observable<AuthResponse> {
-    console.log('%c[AuthService] Моковая верификация подписи...', 'color: purple');
+  isUserAuthenticated = this.isAuthenticated.asReadonly();
 
-    // 1. Декодируем подпись
-    let signature: Uint8Array;
+  async signInWithWallet(): Promise<void> {
+    const wallet = this.wallet.wallet();
+    if (!wallet?.publicKey) {
+      alert('Wallet not connected');
+      return;
+    }
+
+    const message = `Sign in to Pazaak: ${new Date().toISOString()}`;
+    const encodedMessage = new TextEncoder().encode(message);
+
     try {
-      signature = bs58.decode(payload.signature);
-    } catch {
-      return throwError(() => new Error('Invalid signature format'));
-    }
+      const signature = await wallet.signMessage(encodedMessage);
+      const signatureBase58 = bs58.encode(signature);
 
-    // 2. Верифицируем подпись
-    const publicKey = new PublicKey(payload.publicKey);
-    const messageBytes = new TextEncoder().encode(payload.message);
-    const isValid = nacl.sign.detached.verify(messageBytes, signature, publicKey.toBytes());
+      await lastValueFrom(
+        this.http.post<AuthResponse>(`${environment.apiUrl}/auth/authenticate`, {
+          walletId: wallet.publicKey.toBase58(),
+          message,
+          signature: signatureBase58,
+        }).pipe(
+          tap(res => {
+            localStorage.setItem('jwt', res.token);
+            localStorage.setItem('wallet', res.user.walletId);
+            this.isAuthenticated.set(true);
+          }),
+          catchError(err => {
+            this.isAuthenticated.set(false);
+            console.error('Sign-in failed:', err);
+            throw err;
+          })
+        )
+      );
 
-    if (!isValid) {
-      return throwError(() => new Error('Invalid signature'));
-    }
+      await this.router.navigate(['/']);
 
-    // 3. Имитация задержки сервера
-    const mockToken = 'mock-jwt-' + Math.random().toString(36).substr(2, 9);
-    const response: AuthResponse = {
-      token: mockToken,
-      wallet: payload.publicKey,
-      expiresIn: '7d'
-    };
-
-    return of(response).pipe(
-      delay(800), // имитация сети
-      tap(res => {
-        console.log('%c[AuthService] Успешный вход (мок)', 'color: lime');
-        this.saveSession(res.token, res.wallet);
-        this.authState.next(true);
-        this.userWallet.next(res.wallet);
-      })
-    );
-  }
-
-  // === Выход ===
-  logout(): void {
-    localStorage.removeItem(this.STORAGE_KEY_JWT);
-    localStorage.removeItem(this.STORAGE_KEY_WALLET);
-    this.authState.next(false);
-    this.userWallet.next(null);
-    console.log('%c[AuthService] Выход выполнен', 'color: orange');
-  }
-
-  // === Восстановление сессии ===
-  private restoreSession(): void {
-    const jwt = localStorage.getItem(this.STORAGE_KEY_JWT);
-    const wallet = localStorage.getItem(this.STORAGE_KEY_WALLET);
-
-    if (jwt && wallet) {
-      this.authState.next(true);
-      this.userWallet.next(wallet);
-      console.log('%c[AuthService] Сессия восстановлена', 'color: cyan');
+    } catch (err: any) {
+      const errorMsg = err?.error?.detail || err?.message || 'Sign-in failed';
+      alert(errorMsg);
     }
   }
 
-  // === Сохранение в localStorage ===
-  private saveSession(token: string, wallet: string): void {
-    localStorage.setItem(this.STORAGE_KEY_JWT, token);
-    localStorage.setItem(this.STORAGE_KEY_WALLET, wallet);
+  logout() {
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('wallet');
+    this.isAuthenticated.set(false);
   }
 
-  // === Получение токена (для API) ===
-  getToken(): string | null {
-    return localStorage.getItem(this.STORAGE_KEY_JWT);
+  getToken() {
+    let token = localStorage.getItem('jwt');
+    if (token) {
+      return token;
+    }
+    return null;
+  }
+
+  private restoreSession() {
+    if (localStorage.getItem('jwt') && localStorage.getItem('wallet')) {
+      this.isAuthenticated.set(true);
+    }
   }
 }

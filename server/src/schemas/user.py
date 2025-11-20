@@ -21,3 +21,15 @@ class UserSchemaRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AuthenticateSchema(BaseModel):
+    """Объединенная схема для авторизации/регистрации через Phantom"""
+    walletId: str
+    message: str  # Сообщение, которое было подписано
+    signature: str  # Подпись сообщения в формате base58
+
+
+class AuthResponseSchema(BaseModel):
+    user: UserSchemaRead
+    token: str  # JWT токен для последующих запросов

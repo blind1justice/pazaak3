@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
-import {MatButton} from '@angular/material/button';
-import { RouterLink } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { MatButton } from '@angular/material/button';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth-service/auth-service';
 
 @Component({
   selector: 'app-home-page',
@@ -13,4 +14,11 @@ import { RouterLink } from '@angular/router';
 })
 export class HomePage {
 
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
+  onLogoutClick() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 }

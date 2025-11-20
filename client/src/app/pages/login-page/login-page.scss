@@ -1,0 +1,93 @@
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 24px;
+}
+
+.login-game-title {
+  font-size: 5rem;
+  height: 2rem;
+  margin: 0 0 60px 0;
+}
+
+.status-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.status-card-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+
+}
+
+.nickname-field {
+  width: 100%;
+  margin: 16px 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+  gap: 12px;
+  padding: 10px 0;
+
+  button {
+    padding: 25px;
+    font-size: 1.25rem;
+  }
+}
+
+.address {
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 14px;
+  color: #555;
+  margin: 12px 0;
+}
+
+.text-center {
+  text-align: center;
+
+  button {
+    padding: 35px;
+    font-size: 2rem;
+  }
+}
+
+.phantom-hint {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #666;
+
+  a {
+    color: #7c4dff;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.connect-button {
+  font-size: 18px;
+  padding: 12px 32px;
+}
+
+
+.game-title {
+  text-align: center;
+  font-size: 5rem;
+  height: 2rem;
+  margin: 0 0 50px 0;
+}
+
+.connect-btn {
+  padding: 35px;
+  font-size: 1.5rem;
+}
