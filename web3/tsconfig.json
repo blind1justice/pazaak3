@@ -5,6 +5,7 @@
     "lib": ["es2015"],
     "module": "nodenext",
     "target": "es2017",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "outDir": "dist",
   }
 }
