@@ -1,104 +1,66 @@
-import {Component, effect, inject, signal} from '@angular/core';
-import bs58 from 'bs58';
-import {WalletService} from '../../core/services/wallet-service/wallet-service';
-import {PublicKey} from '@solana/web3.js';
-import {AuthService} from '../../core/services/auth-service/auth-service';
+import { Component, computed, effect, inject } from '@angular/core';
+import { MatButton } from '@angular/material/button';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { AuthService } from '../../core/services/auth-service/auth-service';
+import { WalletService } from '../../core/services/wallet-service/wallet-service';
+import { RouterLink } from '@angular/router';
+
 
 @Component({
   selector: 'app-login-page',
-  imports: [],
+  standalone: true,
+  imports: [
+    MatButton,
+    MatCard,
+    MatCardContent,
+    MatCardHeader,
+    MatCardTitle,
+    MatProgressSpinner,
+    RouterLink,
+  ],
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss',
 })
 export class LoginPage {
-  private readonly walletService = inject(WalletService);
-  private readonly authService = inject(AuthService);
+  private wallet = inject(WalletService);
+  private auth = inject(AuthService);
 
-  hasPhantom = signal(!!(window as any).solana?.isPhantom);
-  isLoading = this.walletService.isLoading;
-  isWalletConnected = signal(false);
-  isAuthenticated = signal(false);
-  publicKey = signal<PublicKey | null>(null);
-  nickname = signal<string>('');
+  isLoading = this.wallet.isLoading;
+  walletState = this.wallet.wallet;
+  isAuthenticated = this.auth.isUserAuthenticated;
 
-  private subscription: any;
+  hasPhantom = computed(() => this.wallet.hasPhantom());
+  isWalletConnected = computed(() => !!this.walletState());
+  publicKey = computed(() => this.walletState()?.publicKey?.toBase58() || '');
 
   constructor() {
-    this.subscribeToWallet();
-    this.subscribeToAuth();
-  }
-
-  private subscribeToWallet() {
     effect(() => {
-      const wallet = this.walletService.walletSubject();
-      const connected = !!wallet;
-      this.isWalletConnected.set(connected);
-      this.publicKey.set(wallet?.publicKey || null);
-
-      if (connected) {
-        console.log('%c[LoginPage] Кошелёк подключён:', 'color: green', wallet.publicKey.toBase58());
+      const wallet = this.walletState();
+      if (wallet) {
+        console.log('%c[LoginPage] Wallet connected:', 'color: lime', wallet.publicKey!.toBase58());
       }
     });
   }
 
-  private subscribeToAuth() {
-    this.subscription = this.authService.isAuthenticated$
-      .pipe()
-      .subscribe({
-      next: (isAuth: boolean) => {
-        this.isAuthenticated.set(isAuth);
-        if (isAuth) {
-          console.log('%c[LoginPage] Пользователь аутентифицирован', 'color: lime');
-        }
-      }
-    });
-  }
-
-  async connectWallet() {
-    if (!this.hasPhantom()) return alert('Установите Phantom!');
-    try {
-      await this.walletService.connect();
-    } catch (err) {
-      alert('Не удалось подключиться');
+  async connect() {
+    if (!this.hasPhantom()) {
+      alert('Please install Phantom wallet');
+      return;
     }
+    await this.wallet.connect();
   }
 
   async signIn() {
-    const wallet = this.walletService.walletSubject();
-    if (!wallet) return alert('Кошелёк не подключён');
+    await this.auth.signInWithWallet();
+  }
 
-    const message = `Sign in to MyApp: ${new Date().toISOString()}`;
-    const encoded = new TextEncoder().encode(message);
-
-    try {
-      const signature = await wallet.signMessage(encoded);
-      const signatureBase58 = bs58.encode(signature);
-
-      const nicknameValue = this.nickname().trim() || undefined;
-      
-      this.authService.authenticate({
-        message,
-        signature: signatureBase58,
-        publicKey: this.publicKey()!.toBase58()
-      }, nicknameValue).subscribe({
-        next: () => {
-          this.nickname.set(''); // Очищаем поле после успешной авторизации
-          alert('Успешный вход!');
-        },
-        error: (err: any) => {
-          console.error(err);
-          const errorMessage = err?.error?.detail || err?.message || 'Ошибка входа';
-          alert('Ошибка входа: ' + errorMessage);
-        }
-      });
-    } catch (err) {
-      alert('Ошибка подписи');
-    }
+  disconnect() {
+    this.wallet.disconnect();
   }
 
   logout() {
-    this.authService.logout();
-    this.walletService.disconnect();
-    this.nickname.set(''); // Очищаем поле при выходе
+    this.auth.logout();
+    this.wallet.disconnect();
   }
 }

@@ -1,3 +1,4 @@
+from models.user import User
 from services.base import BaseService
 from repositories.user import UserRepository
 from schemas.user import UserSchemaRead, AuthenticateSchema
@@ -6,7 +7,7 @@ from utils.jwt import create_access_token
 
 
 class UserService(BaseService):
-    repo = UserRepository()
+    repo: UserRepository = UserRepository()
 
     async def authenticate(self, auth_data: AuthenticateSchema) -> dict:
         """
@@ -21,22 +22,21 @@ class UserService(BaseService):
         )
         
         # Ищем пользователя по walletId
-        user = await self.repo.get_by_wallet_id(auth_data.walletId)
+        user: User = await self.repo.get_by_wallet_id(auth_data.walletId)
         
         if user:
             # Пользователь существует - выполняем вход
             user_read = user.to_read_model()
         else:
             # Пользователь не существует - регистрируем
-            # Если nickname не передан, используем первые 8 символов walletId
-            nickname = auth_data.nickname or auth_data.walletId[:8]
+            nickname = f'user_{auth_data.walletId[:6]}'
             
             # Проверяем, существует ли пользователь с таким nickname
             existing_user = await self.repo.get_by_nickname(nickname)
             if existing_user:
                 # Если nickname занят, добавляем суффикс
                 counter = 1
-                max_attempts = 100  # Защита от бесконечного цикла
+                max_attempts = 100
                 while existing_user and counter < max_attempts:
                     new_nickname = f"{nickname}_{counter}"
                     existing_user = await self.repo.get_by_nickname(new_nickname)
@@ -46,14 +46,15 @@ class UserService(BaseService):
                     counter += 1
                 else:
                     # Если не удалось найти свободный nickname, используем walletId
-                    nickname = auth_data.walletId[:8]
+                    nickname = f'user_{auth_data.walletId[:6]}'
             
             # Создаем нового пользователя
             user_dict = {
                 "nickname": nickname,
                 "walletId": auth_data.walletId
             }
-            new_user = await self.repo.add_one(user_dict)
+
+            new_user: User = await self.repo.add_one(user_dict)
             user_read = new_user.to_read_model()
             user = new_user
         
@@ -63,6 +64,7 @@ class UserService(BaseService):
             "wallet_id": user.walletId,
             "nickname": user.nickname
         }
+
         token = create_access_token(token_data)
         
         return {

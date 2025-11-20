@@ -1,107 +1,88 @@
-import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { tap, catchError, lastValueFrom } from 'rxjs';
+import bs58 from 'bs58';
+import { WalletService } from "../wallet-service/wallet-service";
 import { environment } from '../../../../environments/environment';
+import { Router } from '@angular/router';
 
-export interface AuthResponse {
-  user: {
-    id: number;
-    nickname: string;
-    walletId: string;
-    created_at: string;
-    updated_at: string;
-  };
+interface AuthResponse {
   token: string;
+  user: { walletId: string };
 }
 
-export interface SignInPayload {
-  message: string;
-  signature: string;
-  publicKey: string;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly STORAGE_KEY_JWT = 'jwt';
-  private readonly STORAGE_KEY_WALLET = 'wallet';
-  private readonly baseUrl = environment.apiUrl;
-  private readonly httpClient = inject(HttpClient);
+  private http = inject(HttpClient);
+  private wallet = inject(WalletService);
+  private router = inject(Router);
 
-  // Состояние аутентификации
-  private authState = new BehaviorSubject<boolean>(false);
-  private userWallet = new BehaviorSubject<string | null>(null);
-
-  // Публичные потоки
-  public isAuthenticated$ = this.authState.asObservable();
-  public userWallet$ = this.userWallet.asObservable();
+  private isAuthenticated = signal<boolean>(false)
 
   constructor() {
     this.restoreSession();
   }
 
-  // === Авторизация/Регистрация через Phantom (объединенный метод) ===
-  authenticate(payload: SignInPayload, nickname?: string): Observable<AuthResponse> {
-    console.log('%c[AuthService] Отправка запроса на авторизацию/регистрацию...', 'color: purple');
+  isUserAuthenticated = this.isAuthenticated.asReadonly();
 
-    const authData: any = {
-      walletId: payload.publicKey,
-      message: payload.message,
-      signature: payload.signature
-    };
-
-    // Добавляем nickname только если он передан
-    if (nickname) {
-      authData.nickname = nickname;
+  async signInWithWallet(): Promise<void> {
+    const wallet = this.wallet.wallet();
+    if (!wallet?.publicKey) {
+      alert('Wallet not connected');
+      return;
     }
 
-    return this.httpClient.post<AuthResponse>(`${this.baseUrl}/auth/authenticate`, authData).pipe(
-      tap(res => {
-        console.log('%c[AuthService] Успешная авторизация', 'color: lime');
-        this.saveSession(res.token, res.user.walletId);
-        this.authState.next(true);
-        this.userWallet.next(res.user.walletId);
-      }),
-      catchError(err => {
-        console.error('%c[AuthService] Ошибка авторизации', 'color: red', err);
-        this.authState.next(false);
-        this.userWallet.next(null);
-        return throwError(() => err);
-      })
-    );
-  }
+    const message = `Sign in to Pazaak: ${new Date().toISOString()}`;
+    const encodedMessage = new TextEncoder().encode(message);
 
-  // === Выход ===
-  logout(): void {
-    localStorage.removeItem(this.STORAGE_KEY_JWT);
-    localStorage.removeItem(this.STORAGE_KEY_WALLET);
-    this.authState.next(false);
-    this.userWallet.next(null);
-    console.log('%c[AuthService] Выход выполнен', 'color: orange');
-  }
+    try {
+      const signature = await wallet.signMessage(encodedMessage);
+      const signatureBase58 = bs58.encode(signature);
 
-  // === Восстановление сессии ===
-  private restoreSession(): void {
-    const jwt = localStorage.getItem(this.STORAGE_KEY_JWT);
-    const wallet = localStorage.getItem(this.STORAGE_KEY_WALLET);
+      await lastValueFrom(
+        this.http.post<AuthResponse>(`${environment.apiUrl}/auth/authenticate`, {
+          walletId: wallet.publicKey.toBase58(),
+          message,
+          signature: signatureBase58,
+        }).pipe(
+          tap(res => {
+            localStorage.setItem('jwt', res.token);
+            localStorage.setItem('wallet', res.user.walletId);
+            this.isAuthenticated.set(true);
+          }),
+          catchError(err => {
+            this.isAuthenticated.set(false);
+            console.error('Sign-in failed:', err);
+            throw err;
+          })
+        )
+      );
 
-    if (jwt && wallet) {
-      this.authState.next(true);
-      this.userWallet.next(wallet);
-      console.log('%c[AuthService] Сессия восстановлена', 'color: cyan');
+      await this.router.navigate(['/']);
+
+    } catch (err: any) {
+      const errorMsg = err?.error?.detail || err?.message || 'Sign-in failed';
+      alert(errorMsg);
     }
   }
 
-  // === Сохранение в localStorage ===
-  private saveSession(token: string, wallet: string): void {
-    localStorage.setItem(this.STORAGE_KEY_JWT, token);
-    localStorage.setItem(this.STORAGE_KEY_WALLET, wallet);
+  logout() {
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('wallet');
+    this.isAuthenticated.set(false);
   }
 
-  // === Получение токена (для API) ===
-  getToken(): string | null {
-    return localStorage.getItem(this.STORAGE_KEY_JWT);
+  getToken() {
+    let token = localStorage.getItem('jwt');
+    if (token) {
+      return token;
+    }
+    return null;
+  }
+
+  private restoreSession() {
+    if (localStorage.getItem('jwt') && localStorage.getItem('wallet')) {
+      this.isAuthenticated.set(true);
+    }
   }
 }

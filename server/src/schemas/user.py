@@ -28,7 +28,6 @@ class AuthenticateSchema(BaseModel):
     walletId: str
     message: str  # Сообщение, которое было подписано
     signature: str  # Подпись сообщения в формате base58
-    nickname: Optional[str] = None  # Опциональный nickname для регистрации
 
 
 class AuthResponseSchema(BaseModel):

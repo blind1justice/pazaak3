@@ -1,20 +1,24 @@
 <div class="container">
   <div class="content">
     <div class="home__game-title">Pazaak</div>
-    <button mat-raised-button routerLink="/create-game" class="action-button">
+    <button matButton="filled" routerLink="/create-game" class="action-button">
       Create game
     </button>
 
-    <button mat-raised-button routerLink="/connect-to-game" class="action-button">
+    <button matButton="filled" routerLink="/connect-to-game" class="action-button">
       Connect to game
     </button>
 
-    <button mat-raised-button routerLink="/card-collection" class="action-button">
+    <button matButton="elevated" routerLink="/card-collection" class="action-button">
       My card collection
     </button>
 
-    <button mat-raised-button routerLink="/profile" class="action-button">
+    <button matButton="elevated" routerLink="/profile" class="action-button">
       My profile
+    </button>
+
+    <button matButton="elevated" (click)="onLogoutClick()" class="action-button">
+      Logout
     </button>
   </div>
 </div>
