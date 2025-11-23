@@ -1,6 +1,5 @@
 from repositories.base import AbstractRepository
-from sqlalchemy import insert, select, delete, update
-
+from sqlalchemy import insert, select, delete, update, and_
 from db.session import async_session
 
 
@@ -46,3 +45,20 @@ class SQLAclhemyRepository(AbstractRepository):
             await session.commit()
             updated_obj = res.scalar_one()
             return updated_obj.to_read_model()
+        
+    async def get_with_filters(self, filters: dict):
+        async with async_session() as session:
+            query = select(self.model)
+
+            conditions = []
+            for key, value in filters.items():
+                if hasattr(self.model, key):
+                    column = getattr(self.model, key)
+                    conditions.append(column == value)
+            
+            if conditions:
+                query = query.where(and_(*conditions))
+
+            res = await session.execute(query)
+            res = [row[0].to_read_model() for row in res.all()]
+            return res

@@ -9,8 +9,8 @@ class BaseService():
         item_id = await self.repo.add_one(item_dict)
         return item_id
     
-    async def get_all(self):
-        res = await self.repo.get_all()
+    async def get_all(self, filters=None):
+        res = await self.repo.get_with_filters(filters)
         return res
     
     async def get_one(self, id):

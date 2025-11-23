@@ -3,11 +3,11 @@ from models.base import Base
 
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Enum
 
-from schemas.game import GameSchemaRead
+from schemas.game import GameSchemaRead, GameSchemaWithPlayersRead
 from models.enums import GameResult
 
 
@@ -39,3 +39,7 @@ class Game(Base):
 
     def to_read_model(self):
         return GameSchemaRead.model_validate(self)
+    
+
+    def to_read_model_with_players(self):
+        return GameSchemaWithPlayersRead.model_validate(self)
