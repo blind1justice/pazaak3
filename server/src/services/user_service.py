@@ -26,7 +26,7 @@ class UserService(BaseService):
         
         if user:
             # Пользователь существует - выполняем вход
-            user_read = user.to_read_model()
+            user_read = user
         else:
             # Пользователь не существует - регистрируем
             nickname = f'user_{auth_data.walletId[:6]}'
@@ -54,8 +54,8 @@ class UserService(BaseService):
                 "walletId": auth_data.walletId
             }
 
-            new_user: User = await self.repo.add_one(user_dict)
-            user_read = new_user.to_read_model()
+            new_user = await self.repo.add_one(user_dict)
+            user_read = new_user
             user = new_user
         
         # Создаем JWT токен

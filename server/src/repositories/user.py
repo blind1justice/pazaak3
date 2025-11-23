@@ -16,7 +16,7 @@ class UserRepository(SQLAclhemyRepository):
             res = await session.execute(query)
             row = res.one_or_none()
             if row:
-                return row[0]
+                return row[0].to_read_model()
             else:
                 return None
 
@@ -26,7 +26,7 @@ class UserRepository(SQLAclhemyRepository):
             res = await session.execute(query)
             row = res.one_or_none()
             if row:
-                return row[0]
+                return row[0].to_read_model()
             else:
                 return None
 
@@ -36,6 +36,6 @@ class UserRepository(SQLAclhemyRepository):
             res = await session.execute(query)
             row = res.one_or_none()
             if row:
-                return row[0]
+                return row[0].to_read_model()
             else:
                 return None

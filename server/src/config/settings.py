@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     db_port: int = 5435
     jwt_secret_key: str = 'your-secret-key-change-in-production'
     jwt_algorithm: str = 'HS256'
-    jwt_access_token_expire_minutes: int = 30
+    jwt_access_token_expire_minutes: int = 60 * 24
 
     redis_host: str = 'localhost'
     redis_port: int = 6379

@@ -1,8 +1,12 @@
-from fastapi import Depends, HTTPException, status, Header
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from services.user_service import UserService
 from services.game_service import GameService
 from utils.jwt import verify_token
 from schemas.user import UserSchemaRead
+
+
+security = HTTPBearer()
 
 
 def user_service():
@@ -14,7 +18,7 @@ def game_service():
 
 
 async def get_current_user(
-    authorization: str = Header(..., description="JWT token in format 'Bearer <token>'"),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     user_service: UserService = Depends(user_service)
 ) -> UserSchemaRead:
     """
@@ -23,14 +27,7 @@ async def get_current_user(
     - Authorization: JWT токен в формате 'Bearer <token>'
     """
     # Извлекаем токен из заголовка Authorization
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header format. Expected 'Bearer <token>'",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    token = authorization.replace("Bearer ", "").strip()
+    token = credentials.credentials
     
     # Проверяем JWT токен
     payload = verify_token(token)
@@ -59,4 +56,4 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    return user.to_read_model()
+    return user
