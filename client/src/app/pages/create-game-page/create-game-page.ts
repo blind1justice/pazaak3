@@ -8,7 +8,6 @@ import { MatInput } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CreateRoomDto } from '../../core/models/create-room-dto';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RoomsService } from '../../core/services/rooms-service/rooms-service';
 import { SocketService } from '../../core/services/socket-service/socket-service';
 
 @Component({
@@ -28,7 +27,6 @@ import { SocketService } from '../../core/services/socket-service/socket-service
 export class CreateGamePage implements OnInit {
 
   private readonly snackBar = inject(MatSnackBar);
-  private readonly roomsService = inject(RoomsService);
   private readonly socketService = inject(SocketService);
   private readonly router = inject(Router);
 
@@ -58,14 +56,14 @@ export class CreateGamePage implements OnInit {
         bid: formValue.bid!,
       };
 
-      this.roomsService.createRoom(createRoomDto).subscribe({
-        next: (room) => {
-          this.showMessage(`Room with number '${room.number}' was successfully created`);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.showMessage(err.error.detail || 'An error occurred while creating the room');
-        }
-      });
+      // this.roomsService.createRoom(createRoomDto).subscribe({
+      //   next: (room) => {
+      //     this.showMessage(`Room with number '${room.number}' was successfully created`);
+      //   },
+      //   error: (err: HttpErrorResponse) => {
+      //     this.showMessage(err.error.detail || 'An error occurred while creating the room');
+      //   }
+      // });
     } else {
       this.createGameForm.markAllAsTouched();
       return;
