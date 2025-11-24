@@ -2,13 +2,15 @@ from redis_client.types import Card
 from redis_client.enum import CardType
 
 
+blank_card = Card(type=CardType.UsedCard, value=0, state=0, number_of_states=1)
+
 common_cards = {
     'common1': Card(type=CardType.FromCommonDeck, value=1, state=0, number_of_states=1),
-    'common2': Card(type=CardType.FromCommonDeck, value=1, state=0, number_of_states=1),
-    'common3': Card(type=CardType.FromCommonDeck, value=1, state=0, number_of_states=1),
-    'common4': Card(type=CardType.FromCommonDeck, value=1, state=0, number_of_states=1),
-    'common5': Card(type=CardType.FromCommonDeck, value=1, state=0, number_of_states=1),
-    'common6': Card(type=CardType.FromCommonDeck, value=1, state=0, number_of_states=1),
+    'common2': Card(type=CardType.FromCommonDeck, value=2, state=0, number_of_states=1),
+    'common3': Card(type=CardType.FromCommonDeck, value=3, state=0, number_of_states=1),
+    'common4': Card(type=CardType.FromCommonDeck, value=4, state=0, number_of_states=1),
+    'common5': Card(type=CardType.FromCommonDeck, value=5, state=0, number_of_states=1),
+    'common6': Card(type=CardType.FromCommonDeck, value=6, state=0, number_of_states=1),
 }
 
 available_cards = {
@@ -40,5 +42,3 @@ available_cards = {
     'any_value': Card(type=CardType.AnyValue, value=1, state=0, number_of_states=12)
 }
 
-
-all_cards = {**common_cards, **available_cards}

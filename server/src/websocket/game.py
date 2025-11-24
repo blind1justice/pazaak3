@@ -6,13 +6,25 @@ from services.game_service import GameService
 from models.game import GameResult
 from services.user_service import UserService
 from redis_client.client import RedisClient
+from redis_client.enum import CardType, PlayerState
 from schemas.game import GameSchemaUpdate
-from redis_client.available_cards import available_cards, common_cards
-from random import sample
+from redis_client.available_cards import available_cards, common_cards, blank_card
+from random import sample, choice
 
 
 sio = AsyncServer(async_mode='asgi', cors_allowed_origins=["http://localhost:4200", "http://localhost:8080"])
 socket_app = socketio.ASGIApp(sio)
+
+
+def _get_card_from_common_deck(is_first_player: bool, room_id):
+    card = choice(list(common_cards.values()))
+    redis_client = RedisClient()
+    game_state = redis_client.get_game_state(room_id)
+    if is_first_player:
+        game_state.board1.append(card)
+    else:
+        game_state.board2.append(card)
+    redis_client.update_game_state(room_id, game_state)
 
 
 @sio.event
@@ -46,7 +58,6 @@ async def connect(sid, environ):
     user_service = UserService()
     user = await user_service.get_one(user_id)
 
-    await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id})
     
     await sio.enter_room(sid, room_id)
 
@@ -55,12 +66,18 @@ async def connect(sid, environ):
     # clients_in_room = sio.manager.rooms['/'].get(room_id)
 
     if not redis_client.get_game_state(room_id):
+        await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id, 'is_first_player': True})
         redis_client.create_game(room_id, user_id, user.nickname, sample(list(available_cards.values()), 4))
     elif not redis_client.get_game_state(room_id).player2Id:
         redis_client.connect_to_game(room_id, user_id, user.nickname, sample(list(available_cards.values()), 4))
+        await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id, 'is_first_player': False})
         await game_service.update_one(room_id, GameSchemaUpdate(result=GameResult.IN_PROGRESS))
         await sio.emit('game_started', {
             'your_id': user_id,
+            'game_state': redis_client.get_game_state(room_id).model_dump_json()
+        }, room=room_id)
+        _get_card_from_common_deck(True, room_id)
+        await sio.emit('current_state', {
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, room=room_id)
     else:
@@ -69,7 +86,6 @@ async def connect(sid, environ):
             'message': f'User {user_id} reconnected the game'
         }, room=room_id, skip_sid=sid)
         await sio.emit('current_state', {
-            'your_id': user_id,
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, to=sid)
     
@@ -94,25 +110,88 @@ async def disconnect(sid):
 
 
 @sio.event
-async def chat_message(sid, data):
+async def play_card(sid, data):
     try:
         session = await sio.get_session(sid)
         room_id = session.get('room_id')
         user_id = session.get('user_id')
-        
+        is_first_player = session.get('is_first_player')
+
         if not room_id:
             return
         
-        message = data.get('message', '').strip()
-        if not message:
+        redis_client = RedisClient()
+        game_state = redis_client.get_game_state(room_id)
+
+        if is_first_player and game_state.Player1State != PlayerState.ActiveTurn:
             return
         
-        await sio.emit('new_message', {
-            'user_id': user_id,
-            'message': message,
+        if not is_first_player and game_state.Player2State != PlayerState.ActiveTurn:
+            return 
+        
+        card_index = int(data.get('index'))
+        if card_index > 3 or card_index < 0:
+            return
+        if is_first_player and game_state.hand1[card_index].type == CardType.UsedCard:
+            return
+        if not is_first_player and game_state.hand2[card_index].type == CardType.UsedCard:
+            return
+
+        if is_first_player:
+            card = game_state.hand1[card_index]
+            game_state.hand1[card_index] = blank_card
+            game_state.board1.append(card)
+            game_state.Player1State = PlayerState.PlayedCard
+            redis_client.update_game_state(room_id, game_state)
+        else:
+            card = game_state.hand2[card_index]
+            game_state.hand2[card_index] = blank_card
+            game_state.board2.append(card)
+            game_state.Player2State = PlayerState.PlayedCard
+            redis_client.update_game_state(room_id, game_state)
+
+        await sio.emit('current_state', {
+            'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, room=room_id)
-        
-        print(f"Chat message from {user_id} in room {room_id}: {message}")
-        
+
     except Exception as e:
-        print(f"Chat message error: {e}")
+        print(f"Play card error: {e}")  
+
+
+@sio.event
+async def end_turn(sid):
+    try:
+        session = await sio.get_session(sid)
+        room_id = session.get('room_id')
+        user_id = session.get('user_id')
+        is_first_player = session.get('is_first_player')
+
+        if not room_id:
+            return
+        
+        redis_client = RedisClient()
+        game_state = redis_client.get_game_state(room_id)
+
+        if is_first_player and game_state.Player1State not in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
+            return
+        
+        if not is_first_player and game_state.Player2State not in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
+            return 
+
+        if is_first_player:
+            game_state.Player1State = PlayerState.WaitEnemyTurn
+            game_state.Player2State = PlayerState.ActiveTurn
+            redis_client.update_game_state(room_id, game_state)
+            _get_card_from_common_deck(not is_first_player, room_id)
+        else:
+            game_state.Player1State = PlayerState.ActiveTurn
+            game_state.Player2State = PlayerState.WaitEnemyTurn
+            redis_client.update_game_state(room_id, game_state)
+            _get_card_from_common_deck(not is_first_player, room_id)
+
+        await sio.emit('current_state', {
+            'game_state': redis_client.get_game_state(room_id).model_dump_json()
+        }, room=room_id)
+
+    except Exception as e:
+        print(f"Play card error: {e}")  
