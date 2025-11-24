@@ -5,7 +5,6 @@ import { MatError, MatFormField } from "@angular/material/form-field";
 import { MatInput, MatLabel } from "@angular/material/input";
 import { Router, RouterLink } from "@angular/router";
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RoomsService } from '../../core/services/rooms-service/rooms-service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { IConnectToGameForm } from './connect-to-game-form';
 import { ConnectToRoomDto } from '../../core/models/connect-to-room-dto';
@@ -28,7 +27,7 @@ import { SocketService } from '../../core/services/socket-service/socket-service
 })
 export class ConnectToGamePage implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
-  private readonly roomsService = inject(RoomsService);
+  // private readonly roomsService = inject(RoomsService);
   private readonly socketService = inject(SocketService);
   private readonly router = inject(Router);
 
@@ -53,14 +52,14 @@ export class ConnectToGamePage implements OnInit {
         number: formValue.roomNumber!
       };
 
-      this.roomsService.connectToRoom(connectToRoomDto).subscribe({
-        next: (roomId) => {
-          // redirect to game
-        },
-        error: (err: HttpErrorResponse) => {
-          this.showMessage(err.error.detail || 'An error occurred while connecting to room');
-        }
-      });
+      // this.roomsService.connectToRoom(connectToRoomDto).subscribe({
+      //   next: (roomId) => {
+      //     // redirect to game
+      //   },
+      //   error: (err: HttpErrorResponse) => {
+      //     this.showMessage(err.error.detail || 'An error occurred while connecting to room');
+      //   }
+      // });
     }
     else {
       this.connectToGameForm.markAllAsTouched();

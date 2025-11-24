@@ -1,1 +1,56 @@
-<p>card-collection-page works!</p>
+<div class="collection-container">
+  <div class="content">
+    <h1 class="page-title">Your Pazaak Card Collection</h1>
+
+    @if (isLoading()) {
+      <div class="loader-wrapper">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p>Loading your cards from wallet...</p>
+      </div>
+    }
+
+    @else if (nftCards().length === 0) {
+      <div class="empty-state">
+        <p>No cards found in your wallet</p>
+        <small>Connect wallet with Pazaak3 NFTs</small>
+      </div>
+    }
+
+    @else {
+      <div class="cards-grid">
+        @for (card of nftCards(); track card.id) {
+          <mat-card class="card-wrapper" appearance="outlined">
+            <div class="card-item">
+              <div class="card interactive" (click)="onCardClick(card)">
+                <img
+                  [src]="getCardImagePath(card)"
+                  [alt]="card.name"
+                  class="card-image"
+                  loading="lazy" />
+
+                <div class="card-value-wrapper">
+                  <div class="card-value">
+                    {{ getCardValue(card) }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-info">
+                <div class="card-name" [title]="card.name">
+                  {{ card.name }}
+                </div>
+                <a
+                  [href]="getSolscanUrl(card.id)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="solscan-link">
+                  View on Solscan
+                </a>
+              </div>
+            </div>
+          </mat-card>
+        }
+      </div>
+    }
+  </div>
+</div>

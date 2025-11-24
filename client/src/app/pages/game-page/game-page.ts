@@ -1,5 +1,4 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { NgClass } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { GameService } from '../../core/services/game-service/game-service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -9,11 +8,12 @@ import { MatCard, MatCardContent } from '@angular/material/card';
 import { Card } from '../../core/models/game/card';
 import { MatButton } from '@angular/material/button';
 import { CardHelperService } from '../../core/services/card-helper-service/card-helper-service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-game-page',
   imports: [
-    NgClass,
+    CommonModule,
     MatCard,
     MatCardContent,
     MatButton
