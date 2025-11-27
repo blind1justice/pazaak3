@@ -1,13 +1,22 @@
-import { Component, inject, OnDestroy, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
 import { Router, RouterLink } from "@angular/router";
+import { GameService } from '../../core/services/game-service/game-service';
+import { catchError, interval, of, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { Game } from '../../core/models/game/game';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
+import {
+  MatCell, MatCellDef,
+  MatColumnDef,
+  MatHeaderCell, MatHeaderCellDef,
+  MatHeaderRow,
+  MatHeaderRowDef,
+  MatRow, MatRowDef,
+  MatTable
+} from '@angular/material/table';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RoomsService } from '../../core/services/rooms-service/rooms-service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { IConnectToGameForm } from './connect-to-game-form';
-import { ConnectToRoomDto } from '../../core/models/connect-to-room-dto';
-import { SocketService } from '../../core/services/socket-service/socket-service';
 
 @Component({
   selector: 'app-connect-to-game-page',
@@ -36,11 +45,11 @@ import { SocketService } from '../../core/services/socket-service/socket-service
   templateUrl: './connect-to-game-page.html',
   styleUrl: './connect-to-game-page.scss',
 })
-export class ConnectToGamePage implements OnInit {
+export class ConnectToGamePage implements OnDestroy {
+  private gameService = inject(GameService);
+  private router = inject(Router);
+  private destroy$ = new Subject<void>();
   private readonly snackBar = inject(MatSnackBar);
-  private readonly roomsService = inject(RoomsService);
-  private readonly socketService = inject(SocketService);
-  private readonly router = inject(Router);
 
   games = signal<Game[]>([]);
   isLoading = signal(true);
@@ -75,19 +84,23 @@ export class ConnectToGamePage implements OnInit {
   joinGame(gameId: number) {
     this.isJoining.set(true);
 
-      this.roomsService.connectToRoom(connectToRoomDto).subscribe({
-        next: (roomId) => {
-          // redirect to game
-        },
-        error: (err: HttpErrorResponse) => {
-          this.showMessage(err.error.detail || 'An error occurred while connecting to room');
-        }
-      });
-    }
-    else {
-      this.connectToGameForm.markAllAsTouched();
-      return;
-    }
+    this.gameService.connectToGame(gameId).subscribe({
+      next: (game) => {
+        this.router.navigate(['/game', game.id]);
+      },
+      error: (err) => {
+        this.isJoining.set(false);
+        this.showMessage(err.error?.detail || 'Failed to join game');
+      }
+    });
+  }
+
+  private showMessage(message: string): void {
+    this.snackBar.open(message, 'Ok', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top'
+    });
   }
 
   ngOnDestroy() {
