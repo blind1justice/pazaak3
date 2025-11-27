@@ -1,6 +1,6 @@
 <div class="container">
   <div class="content">
-    @if (!isBoardSwapped()) {
+    @if (!isBoardSwapped() && gameState()) {
       <div class="turn-col">
         <div class="circle"
              [ngClass]="{ 'red': isMyTurn(), 'transparent': !isMyTurn() }">
@@ -16,12 +16,12 @@
         <div class="top-bar">
           <mat-card appearance="outlined" class="nickname-bar">
             <mat-card-content>
-              You
+              You ({{ gameState().player1Name }})
             </mat-card-content>
           </mat-card>
           <mat-card appearance="outlined" class="board-sum-bar">
             <mat-card-content>
-              {{ gameState().board1Sum }}
+              {{ gameState().board1sum }}
             </mat-card-content>
           </mat-card>
         </div>
@@ -29,7 +29,7 @@
           <div class="game-board">
             @for (i of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track i; let pos = $index) {
               <div class="board-cell">
-                <div class="card" [class.interactive]="gameState().board1[pos]">
+                <div class="card">
                   @if (gameState().board1[pos]) {
                     <img
                       [src]="getCardImagePath(gameState().board1[pos])"
@@ -51,8 +51,9 @@
           @for (i of [0, 1, 2, 3]; track i; let pos = $index) {
             <div class="hand-card-wrapper">
               <div class="board-cell">
-                <div class="card" [class.interactive]="gameState().hand1[pos]">
-                  @if (gameState().hand1[pos]) {
+                <div class="card"
+                     [class.interactive]="gameState().hand1[pos] && gameState().hand1[pos].type !== CardType.UsedCard">
+                  @if (gameState().hand1[pos] && gameState().hand1[pos].type !== CardType.UsedCard) {
                     <img
                       [src]="getCardImagePath(gameState().hand1[pos])"
                       [alt]="gameState().hand1[pos].type"
@@ -86,19 +87,17 @@
         </div>
       </div>
 
-
       <div class="turn-time-wrapper">
-        <div class="turn-time">
-          2:14
+        <div class="turn-time" [class.warning]="remainingTime() <= 10">
+          {{ formatTime(remainingTime()) }}
         </div>
       </div>
-
 
       <div class="game-outer-container">
         <div class="top-bar">
           <mat-card appearance="outlined" class="board-sum-bar">
             <mat-card-content>
-              {{ gameState().board2Sum }}
+              {{ gameState().board2sum }}
             </mat-card-content>
           </mat-card>
           <mat-card appearance="outlined" class="nickname-bar">
@@ -132,13 +131,13 @@
         <div class="game-hand">
           @for (i of [0, 1, 2, 3]; track i; let pos = $index) {
             <div class="hand-card-wrapper">
-              <div class="board-cell">
+              <div class="board-cell enemy-hand">
                 <div class="card">
                   @if (gameState().hand2[pos]) {
                     <img
                       src="assets/cards/gray-card.png"
                       alt="Enemy Card"
-                      class="card-image"/>
+                      class="card-image" />
                   } @else {
                     <div class="empty-cell"></div>
                   }
@@ -149,10 +148,13 @@
         </div>
         <div class="game-actions">
           <div class="game-actions-top-row">
-            <button matButton="filled" (click)="onStandClick()">
+            <button matButton="filled" (click)="onPlayCardClick()" [disabled]="!canPlaySelectedCard()">
+              Play card
+            </button>
+            <button matButton="elevated" (click)="onStandClick()" [disabled]="!isMyTurn()">
               Stand
             </button>
-            <button matButton="filled" (click)="onEndTurnClick()">
+            <button matButton="elevated" (click)="onEndTurnClick()" [disabled]="!isMyTurn()">
               End turn
             </button>
           </div>
@@ -170,6 +172,186 @@
         <div class="round-points-box">
           @for (i of [0, 1, 2]; track i; ) {
             <div class="round-point-circle" [class.active]="i < gameState().roundPoint2">
+            </div>
+          }
+        </div>
+      </div>
+
+
+
+
+    } @else if (gameState()) {
+      <div class="turn-col">
+        <div class="circle"
+             [ngClass]="{ 'red': isMyTurn(), 'transparent': !isMyTurn() }">
+        </div>
+        <div class="round-points-box">
+          @for (i of [0, 1, 2]; track i; ) {
+            <div class="round-point-circle" [class.active]="i < gameState().roundPoint2">
+            </div>
+          }
+        </div>
+      </div>
+      <div class="game-outer-container">
+        <div class="top-bar">
+          <mat-card appearance="outlined" class="nickname-bar">
+            <mat-card-content>
+              You ({{ gameState().player2Name }})
+            </mat-card-content>
+          </mat-card>
+          <mat-card appearance="outlined" class="board-sum-bar">
+            <mat-card-content>
+              {{ gameState().board2sum }}
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="game-board-wrapper">
+          <div class="game-board">
+            @for (i of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track i; let pos = $index) {
+              <div class="board-cell">
+                <div class="card">
+                  @if (gameState().board2[pos]) {
+                    <img
+                      [src]="getCardImagePath(gameState().board2[pos])"
+                      [alt]="gameState().board2[pos].type"
+                      (click)="onSelectCardClick(gameState().board2[pos])"
+                      class="card-image" />
+                    <div class="card-value">
+                      {{ gameState().board2[pos].value }}
+                    </div>
+                  } @else {
+                    <div class="empty-cell"></div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="game-hand">
+          @for (i of [0, 1, 2, 3]; track i; let pos = $index) {
+            <div class="hand-card-wrapper">
+              <div class="board-cell">
+                <div class="card"
+                     [class.interactive]="gameState().hand2[pos] && gameState().hand2[pos].type !== CardType.UsedCard">
+                  @if (gameState().hand2[pos] && gameState().hand2[pos].type !== CardType.UsedCard) {
+                    <img
+                      [src]="getCardImagePath(gameState().hand2[pos])"
+                      [alt]="gameState().hand2[pos].type"
+                      (click)="onSelectCardClick(gameState().hand2[pos])"
+                      class="card-image" />
+                    <div class="card-value">
+                      {{ gameState().hand2[pos].value }}
+                    </div>
+                  } @else {
+                    <div class="empty-cell"></div>
+                  }
+                </div>
+              </div>
+              <div>
+                <button
+                  matButton="elevated"
+                  class="hand-card-button"
+                  (click)="onHandCardSwapClick(gameState().hand2[pos])">
+                  Swap
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="card-description-wrapper">
+          <mat-card class="card-description">
+            <mat-card-content class="card-description-content">
+              {{ showCardDescription(selectedCard()) }}
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <div class="turn-time-wrapper">
+        <div class="turn-time" [class.warning]="remainingTime() <= 10">
+          {{ formatTime(remainingTime()) }}
+        </div>
+      </div>
+
+      <div class="game-outer-container">
+        <div class="top-bar">
+          <mat-card appearance="outlined" class="board-sum-bar">
+            <mat-card-content>
+              {{ gameState().board1sum }}
+            </mat-card-content>
+          </mat-card>
+          <mat-card appearance="outlined" class="nickname-bar">
+            <mat-card-content>
+              {{ gameState().player1Name }}
+            </mat-card-content>
+          </mat-card>
+        </div>
+        <div class="game-board-wrapper">
+          <div class="game-board">
+            @for (i of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track i; let pos = $index) {
+              <div class="board-cell">
+                <div class="card">
+                  @if (gameState().board1[pos]) {
+                    <img
+                      [src]="getCardImagePath(gameState().board1[pos])"
+                      [alt]="gameState().board1[pos].type"
+                      (click)="onSelectCardClick(gameState().board1[pos])"
+                      class="card-image" />
+                    <div class="card-value">
+                      {{ gameState().board1[pos].value }}
+                    </div>
+                  } @else {
+                    <div class="empty-cell"></div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="game-hand">
+          @for (i of [0, 1, 2, 3]; track i; let pos = $index) {
+            <div class="hand-card-wrapper">
+              <div class="board-cell">
+                <div class="card">
+                  @if (gameState().hand1[pos]) {
+                    <img
+                      src="assets/cards/gray-card.png"
+                      alt="Enemy Card"
+                      class="card-image" />
+                  } @else {
+                    <div class="empty-cell"></div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="game-actions">
+          <div class="game-actions-top-row">
+            <button matButton="filled" (click)="onPlayCardClick()" [disabled]="!canPlaySelectedCard()">
+              Play card
+            </button>
+            <button matButton="elevated" (click)="onStandClick()" [disabled]="!isMyTurn()">
+              Stand
+            </button>
+            <button matButton="elevated" (click)="onEndTurnClick()" [disabled]="!isMyTurn()">
+              End turn
+            </button>
+          </div>
+          <div>
+            <button matButton="elevated" (click)="onConcedeTheGameClick()">
+              Concede the game
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="turn-col">
+        <div class="circle"
+             [ngClass]="{ 'red': !isMyTurn(), 'transparent': isMyTurn() }">
+        </div>
+        <div class="round-points-box">
+          @for (i of [0, 1, 2]; track i; ) {
+            <div class="round-point-circle" [class.active]="i < gameState().roundPoint1">
             </div>
           }
         </div>

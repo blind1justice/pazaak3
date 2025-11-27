@@ -2,6 +2,8 @@ import { Card } from './card';
 import { PlayerState } from './player-state';
 
 export interface GameState {
+  gameId: number;
+
   player1Id: number;
   player2Id: number;
   player1Name: string;
@@ -15,11 +17,11 @@ export interface GameState {
   roundPoint1: number;
   roundPoint2: number;
 
-  board1Sum: number;
-  board2Sum: number;
+  board1sum: number;
+  board2sum: number;
 
-  player1State: PlayerState;
-  player2State: PlayerState;
+  Player1State: PlayerState;
+  Player2State: PlayerState;
 
-  gameId: number;
+  turnEndTime: number;
 }

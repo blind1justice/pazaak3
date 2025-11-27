@@ -18,7 +18,11 @@
     </form>
 
     <button matButton="filled" [disabled]="createGameForm.invalid" class="action-button" (click)="onSubmit()">
-      Create game
+      @if (waitingForPlayer()) {
+        Waiting for opponent...
+      } @else {
+        Create Game
+      }
     </button>
     <button matButton="elevated" routerLink="/" class="action-button">
       Back

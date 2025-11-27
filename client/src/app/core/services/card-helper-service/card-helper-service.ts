@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { CardType } from '../../models/game/card-type';
-import { Card } from '../../models/game/card';
+import { CardType } from '../../models/card-type';
+import { Card } from '../../models/card';
 import { NftCard } from '../nft-cards-service/nft-cards-service';
 
 @Injectable({

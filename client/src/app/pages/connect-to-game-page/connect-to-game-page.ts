@@ -4,7 +4,7 @@ import { MatButton } from "@angular/material/button";
 import { Router, RouterLink } from "@angular/router";
 import { GameService } from '../../core/services/game-service/game-service';
 import { catchError, interval, of, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
-import { Game } from '../../core/models/game/game';
+import { Game } from '../../core/models/game';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
 import {
@@ -17,6 +17,8 @@ import {
   MatTable
 } from '@angular/material/table';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { SocketService } from '../../core/services/socket-service/socket-service';
+import { AuthService } from '../../core/services/auth-service/auth-service';
 
 @Component({
   selector: 'app-connect-to-game-page',
@@ -46,8 +48,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrl: './connect-to-game-page.scss',
 })
 export class ConnectToGamePage implements OnDestroy {
-  private gameService = inject(GameService);
-  private router = inject(Router);
+  private readonly gameService = inject(GameService);
+  private readonly socketService = inject(SocketService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   private destroy$ = new Subject<void>();
   private readonly snackBar = inject(MatSnackBar);
 
@@ -55,14 +59,14 @@ export class ConnectToGamePage implements OnDestroy {
   isLoading = signal(true);
   isJoining = signal(false);
 
-  displayedColumns = ['id', 'creator', 'bid', 'action'];
+  displayedColumns = ['id', 'creator', 'bid', 'reward', 'action'];
 
   constructor() {
     this.loadGamesPeriodically();
   }
 
   private loadGamesPeriodically() {
-    interval(10_000)
+    interval(5_000)
       .pipe(
         startWith(0),
         switchMap(() => this.gameService.getPendingGames().pipe(
@@ -86,12 +90,20 @@ export class ConnectToGamePage implements OnDestroy {
 
     this.gameService.connectToGame(gameId).subscribe({
       next: (game) => {
+        this.socketService.connectToGame(
+          game.id.toString(),
+          this.authService.getJwtToken() || '',
+        );
+
         this.router.navigate(['/game', game.id]);
       },
       error: (err) => {
         this.isJoining.set(false);
         this.showMessage(err.error?.detail || 'Failed to join game');
-      }
+      },
+      complete: () => {
+        this.isJoining.set(false);
+      },
     });
   }
 
