@@ -5,7 +5,6 @@ from sqlalchemy.orm import selectinload, joinedload
 from db.session import async_session
 
 
-
 class GameRepository(SQLAclhemyRepository):
     model = Game
 

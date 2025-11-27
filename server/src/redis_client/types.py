@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, computed_field
-from client.redis.enum import CardType, PlayerState
+from redis_client.enum import CardType, PlayerState
 
 
 class Card(BaseModel):
@@ -13,17 +13,17 @@ class Card(BaseModel):
 
 class GameState(BaseModel):
     player1Id: int
-    player2Id: int
+    player2Id: Optional[int] = None
     player1Name: str
-    player2Name: str
+    player2Name: Optional[str] = None
     hand1: List[Card]
-    hand2: List[Card]
-    board1: List[Card]
-    board2: List[Card]
-    roundPoint1: int = Field(ge=0, le=3)
-    roundPoint2: int = Field(ge=0, le=3)
-    Player1State: PlayerState
-    Player2State: PlayerState
+    hand2: List[Card] = []
+    board1: List[Card] = []
+    board2: List[Card] = []
+    roundPoint1: int = Field(ge=0, le=3, default=0)
+    roundPoint2: int = Field(ge=0, le=3, default=0)
+    Player1State: PlayerState = PlayerState.ActiveTurn
+    Player2State: PlayerState = PlayerState.WaitEnemyTurn
 
     @computed_field
     @property
