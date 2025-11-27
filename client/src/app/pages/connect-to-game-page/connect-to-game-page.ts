@@ -1,78 +1,100 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms";
+import { Component, inject, OnDestroy, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
-import { MatError, MatFormField } from "@angular/material/form-field";
-import { MatInput, MatLabel } from "@angular/material/input";
 import { Router, RouterLink } from "@angular/router";
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { RoomsService } from '../../core/services/rooms-service/rooms-service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { IConnectToGameForm } from './connect-to-game-form';
-import { ConnectToRoomDto } from '../../core/models/connect-to-room-dto';
-import { SocketService } from '../../core/services/socket-service/socket-service';
+import { GameService } from '../../core/services/game-service/game-service';
+import { catchError, interval, of, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { Game } from '../../core/models/game/game';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
+import {
+  MatCell, MatCellDef,
+  MatColumnDef,
+  MatHeaderCell, MatHeaderCellDef,
+  MatHeaderRow,
+  MatHeaderRowDef,
+  MatRow, MatRowDef,
+  MatTable
+} from '@angular/material/table';
 
 @Component({
   selector: 'app-connect-to-game-page',
   imports: [
     FormsModule,
     MatButton,
-    MatError,
-    MatFormField,
-    MatInput,
-    MatLabel,
     ReactiveFormsModule,
-    RouterLink
+    RouterLink,
+    MatProgressSpinner,
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardSubtitle,
+    MatCardContent,
+    MatTable,
+    MatColumnDef,
+    MatHeaderCell,
+    MatCell,
+    MatHeaderRow,
+    MatRow,
+    MatHeaderRowDef,
+    MatRowDef,
+    MatCellDef,
+    MatHeaderCellDef
   ],
   templateUrl: './connect-to-game-page.html',
   styleUrl: './connect-to-game-page.scss',
 })
-export class ConnectToGamePage implements OnInit {
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly roomsService = inject(RoomsService);
-  private readonly socketService = inject(SocketService);
-  private readonly router = inject(Router);
+export class ConnectToGamePage implements OnDestroy {
+  private gameService = inject(GameService);
+  private router = inject(Router);
+  private destroy$ = new Subject<void>();
 
-  connectToGameForm = new FormGroup<IConnectToGameForm>({
-    roomNumber: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required],
-    })
-  });
+  games = signal<Game[]>([]);
+  isLoading = signal(true);
+  isJoining = signal(false);
 
-  ngOnInit(): void {
-    this.socketService.on<{ gameId: "123" }>('startGame').subscribe((data) => {
-      console.log(data);
-      this.router.navigate(['/game', data.gameId]);
+  displayedColumns = ['id', 'creator', 'bid', 'action'];
+
+  constructor() {
+    this.loadGamesPeriodically();
+  }
+
+  private loadGamesPeriodically() {
+    interval(10_000)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.gameService.getPendingGames().pipe(
+          catchError(err => {
+            console.error('Failed to load games:', err);
+            this.isLoading.set(false);
+            return of([]);
+          })
+        )),
+        tap(games => {
+          this.games.set(games);
+          this.isLoading.set(false);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
+  }
+
+  joinGame(gameId: number) {
+    this.isJoining.set(true);
+
+    this.gameService.connectToGame(gameId).subscribe({
+      next: (game) => {
+        this.router.navigate(['/game', game.id]);
+      },
+      error: (err) => {
+        this.isJoining.set(false);
+        alert(err.error?.detail || 'Failed to join game');
+      }
     });
   }
 
-  onSubmit() {
-    if (this.connectToGameForm.valid) {
-      const formValue = this.connectToGameForm.value;
-      const connectToRoomDto: ConnectToRoomDto = {
-        number: formValue.roomNumber!
-      };
-
-      this.roomsService.connectToRoom(connectToRoomDto).subscribe({
-        next: (roomId) => {
-          // redirect to game
-        },
-        error: (err: HttpErrorResponse) => {
-          this.showMessage(err.error.detail || 'An error occurred while connecting to room');
-        }
-      });
-    }
-    else {
-      this.connectToGameForm.markAllAsTouched();
-      return;
-    }
-  }
-
-  private showMessage(message: string): void {
-    this.snackBar.open(message, 'Ok', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'top'
-    });
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
