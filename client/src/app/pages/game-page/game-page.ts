@@ -76,11 +76,9 @@ export class GamePage implements OnInit {
     }
 
     const myHand = this.isBoardSwapped() ? state.hand2 : state.hand1;
-    const isInMyHand = myHand.some(c =>
+    return myHand.some(c =>
       c && c.value === card.value && c.type === card.type
     );
-
-    return isInMyHand;
   });
 
   constructor() {

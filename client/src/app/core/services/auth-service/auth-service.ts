@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap, catchError, lastValueFrom, of, map, Observable } from 'rxjs';
 import bs58 from 'bs58';
@@ -108,7 +108,7 @@ export class AuthService {
     }
 
     return this.http.get<any>(`${environment.apiUrl}/auth/me`).pipe(
-      map(user => {
+      map(() => {
         this.isAuthenticated.set(true);
         return true;
       }),
