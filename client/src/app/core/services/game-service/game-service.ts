@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { PlayerState } from '../../models/game/player-state';
 import { CardType } from '../../models/game/card-type';
+import { Game } from '../../models/game/game';
 
 
 @Injectable({
@@ -13,6 +14,18 @@ import { CardType } from '../../models/game/card-type';
 export class GameService {
   private readonly baseUrl = environment.apiUrl;
   private httpClient = inject(HttpClient);
+
+  createGame(bid: number): Observable<Game> {
+    return this.httpClient.post<Game>(`${this.baseUrl}/games/create`, {bid});
+  }
+
+  connectToGame(id: number): Observable<Game> {
+    return this.httpClient.post<Game>(`${this.baseUrl}/games/connect/${id}`, {});
+  }
+
+  getPendingGames(): Observable<Game[]> {
+    return this.httpClient.get<Game[]>(`${this.baseUrl}/games/pending`);
+  }
 
   getGameStateById(gameId: number): Observable<GameState> {
     // return this.httpClient.get<GameState>(`${this.baseUrl}/games/${gameId}/state`);

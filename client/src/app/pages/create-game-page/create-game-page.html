@@ -5,15 +5,6 @@
     <form class="create-game__form" [formGroup]="createGameForm" (ngSubmit)="onSubmit()">
 
       <mat-form-field appearance="fill">
-        <mat-label>Room number</mat-label>
-        <input matInput formControlName="roomNumber" required />
-
-        @if (createGameForm.get('roomNumber')?.hasError('required') && createGameForm.get('roomNumber')?.touched) {
-          <mat-error>Room number is required</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="fill">
         <mat-label>Bid</mat-label>
         <input matInput type="number" formControlName="bid" required min="0" />
 

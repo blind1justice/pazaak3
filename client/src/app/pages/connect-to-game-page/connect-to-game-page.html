@@ -1,25 +1,74 @@
 <div class="container">
   <div class="content">
-    <div class="connect-to-game__game-title">Pazaak</div>
+    <h1 class="game-title">Pazaak</h1>
 
-    <form class="connect-to-game__form" [formGroup]="connectToGameForm" (ngSubmit)="onSubmit()">
+    <mat-card class="games-card">
+      <mat-card-header>
+        <mat-card-title>Open Games</mat-card-title>
+        <mat-card-subtitle>
+          Refreshes every 10 seconds
+        </mat-card-subtitle>
+      </mat-card-header>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Room number</mat-label>
-        <input matInput formControlName="roomNumber" required />
-
-        @if (connectToGameForm.get('roomNumber')?.hasError('required') && connectToGameForm.get('roomNumber')?.touched) {
-          <mat-error>Room number is required</mat-error>
+      <mat-card-content>
+        @if (isLoading()) {
+          <div class="loading">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Loading games...</p>
+          </div>
         }
-      </mat-form-field>
 
-    </form>
+        @else if (games().length === 0) {
+          <p class="no-games">No open games right now. Create one!</p>
+        }
 
-    <button matButton="filled" [disabled]="connectToGameForm.invalid" class="action-button" (click)="onSubmit()">
-      Connect to game
-    </button>
-    <button matButton="elevated" routerLink="/" class="action-button">
-      Back
-    </button>
+        @else {
+          <table mat-table [dataSource]="games()" class="games-table">
+
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef>Game ID</th>
+              <td mat-cell *matCellDef="let game">#{{ game.id }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="creator">
+              <th mat-header-cell *matHeaderCellDef>Created by</th>
+              <td mat-cell *matCellDef="let game">Player {{ game.player1_id }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="bid">
+              <th mat-header-cell *matHeaderCellDef>Stake</th>
+              <td mat-cell *matCellDef="let game">{{ game.bid }} SOL</td>
+            </ng-container>
+
+            <ng-container matColumnDef="action">
+              <th mat-header-cell *matHeaderCellDef>Join</th>
+              <td mat-cell *matCellDef="let game">
+                <button mat-raised-button color="primary"
+                        [disabled]="isJoining()"
+                        (click)="joinGame(game.id)">
+                  @if (isJoining()) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                    Join
+                  }
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <div class="actions">
+      <button mat-raised-button color="accent" routerLink="/create-game">
+        Create New Game
+      </button>
+      <button mat-button routerLink="/">
+        Back to Menu
+      </button>
+    </div>
   </div>
 </div>

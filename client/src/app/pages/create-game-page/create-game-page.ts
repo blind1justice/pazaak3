@@ -6,9 +6,9 @@ import { ICreateGameForm } from './create-game-form';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { CreateRoomDto } from '../../core/models/create-room-dto';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SocketService } from '../../core/services/socket-service/socket-service';
+import { GameService } from '../../core/services/game-service/game-service';
 
 @Component({
   selector: 'app-create-game-page',
@@ -27,14 +27,11 @@ import { SocketService } from '../../core/services/socket-service/socket-service
 export class CreateGamePage implements OnInit {
 
   private readonly snackBar = inject(MatSnackBar);
+  private readonly gameService = inject(GameService);
   private readonly socketService = inject(SocketService);
   private readonly router = inject(Router);
 
   createGameForm = new FormGroup<ICreateGameForm>({
-    roomNumber: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
     bid: new FormControl(0, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0)],
@@ -51,19 +48,15 @@ export class CreateGamePage implements OnInit {
   onSubmit() {
     if (this.createGameForm.valid) {
       const formValue = this.createGameForm.value;
-      const createRoomDto: CreateRoomDto = {
-        number: formValue.roomNumber!,
-        bid: formValue.bid!,
-      };
 
-      // this.roomsService.createRoom(createRoomDto).subscribe({
-      //   next: (room) => {
-      //     this.showMessage(`Room with number '${room.number}' was successfully created`);
-      //   },
-      //   error: (err: HttpErrorResponse) => {
-      //     this.showMessage(err.error.detail || 'An error occurred while creating the room');
-      //   }
-      // });
+      this.gameService.createGame(Number(formValue.bid)).subscribe({
+        next: (room) => {
+          this.showMessage(`Room with number '${room.id}' was successfully created`);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.showMessage(err.error.detail || 'An error occurred while creating the room');
+        }
+      });
     } else {
       this.createGameForm.markAllAsTouched();
       return;
