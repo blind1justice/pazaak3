@@ -1,6 +1,7 @@
 from urllib.parse import parse_qs
 from socketio import AsyncServer
 import socketio
+from redis_client.types import GameState
 from utils.jwt import verify_token
 from services.game_service import GameService
 from models.game import GameResult
@@ -10,6 +11,10 @@ from redis_client.enum import CardType, PlayerState
 from schemas.game import GameSchemaUpdate
 from redis_client.available_cards import available_cards, common_cards, blank_card
 from random import sample, choice
+from time import time
+
+
+TURN_DURATION = 60
 
 
 sio = AsyncServer(async_mode='asgi', cors_allowed_origins=["http://localhost:4200", "http://localhost:8080"])
@@ -25,6 +30,16 @@ def _get_card_from_common_deck(is_first_player: bool, room_id):
     else:
         game_state.board2.append(card)
     redis_client.update_game_state(room_id, game_state)
+
+
+def _start_turn_for_player(game_state: GameState, is_first_player: bool):
+    game_state.turnEndTime = time() + TURN_DURATION
+    if is_first_player:
+        game_state.Player1State = PlayerState.ActiveTurn
+        game_state.Player2State = PlayerState.WaitEnemyTurn
+    else:
+        game_state.Player1State = PlayerState.WaitEnemyTurn
+        game_state.Player2State = PlayerState.ActiveTurn
 
 
 @sio.event
@@ -81,6 +96,11 @@ async def connect(sid, environ):
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, room=room_id)
     else:
+
+        game_state = redis_client.get_game_state(room_id)
+        is_first_player = (game_state.player1Id == user_id)
+        await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id, 'is_first_player': is_first_player })
+
         await sio.emit('reconnected', {
             'user_id': user_id,
             'message': f'User {user_id} reconnected the game'
@@ -90,6 +110,43 @@ async def connect(sid, environ):
         }, to=sid)
     
     print(f"Client {sid} connected to room {room_id}")
+
+
+# после загрузки страницы игры
+@sio.event
+async def game_ready_to_start(sid):
+
+    session = await sio.get_session(sid)
+    room_id = session.get('room_id')
+    user_id = session.get('user_id')
+
+    if not room_id or not user_id:
+        print(f"[SIO] Invalid session in game_ready_to_start: {sid}")
+        return
+
+    redis_client = RedisClient()
+    game_state = redis_client.get_game_state(room_id)
+
+    # Помечаем игрока как "готов"
+    if game_state.player1Id == user_id and game_state.Player1State == PlayerState.Initial:
+        game_state.Player1State = PlayerState.ReadyToStartGame
+    elif game_state.player2Id == user_id and game_state.Player2State == PlayerState.Initial:
+        game_state.Player2State = PlayerState.ReadyToStartGame
+
+    redis_client.update_game_state(room_id, game_state)
+
+    print(f"[SIO] Player {user_id} ready in room {room_id}")
+
+    # Если оба готовы — шлём состояние
+    if game_state.Player1State == PlayerState.ReadyToStartGame and game_state.Player2State == PlayerState.ReadyToStartGame:
+        print(f"[SIO] Both players ready! Starting game in room {room_id}")
+
+        _start_turn_for_player(game_state, True)
+        redis_client.update_game_state(room_id, game_state)
+        
+        await sio.emit('game_started', {
+            'game_state': game_state.model_dump_json()
+        }, room=room_id)
 
 
 @sio.event
@@ -159,7 +216,7 @@ async def play_card(sid, data):
 
 
 @sio.event
-async def end_turn(sid):
+async def end_turn(sid, data=None):
     try:
         session = await sio.get_session(sid)
         room_id = session.get('room_id')
@@ -178,16 +235,9 @@ async def end_turn(sid):
         if not is_first_player and game_state.Player2State not in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
             return 
 
-        if is_first_player:
-            game_state.Player1State = PlayerState.WaitEnemyTurn
-            game_state.Player2State = PlayerState.ActiveTurn
-            redis_client.update_game_state(room_id, game_state)
-            _get_card_from_common_deck(not is_first_player, room_id)
-        else:
-            game_state.Player1State = PlayerState.ActiveTurn
-            game_state.Player2State = PlayerState.WaitEnemyTurn
-            redis_client.update_game_state(room_id, game_state)
-            _get_card_from_common_deck(not is_first_player, room_id)
+        _start_turn_for_player(game_state, not is_first_player)
+        redis_client.update_game_state(room_id, game_state)
+        _get_card_from_common_deck(not is_first_player, room_id)
 
         await sio.emit('current_state', {
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
