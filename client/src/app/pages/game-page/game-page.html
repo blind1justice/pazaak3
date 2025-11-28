@@ -133,7 +133,7 @@
             <div class="hand-card-wrapper">
               <div class="board-cell enemy-hand">
                 <div class="card">
-                  @if (gameState().hand2[pos]) {
+                  @if (gameState().hand2[pos] && gameState().hand2[pos].type !== CardType.UsedCard) {
                     <img
                       src="assets/cards/gray-card.png"
                       alt="Enemy Card"
@@ -176,8 +176,6 @@
           }
         </div>
       </div>
-
-
 
 
     } @else if (gameState()) {
@@ -313,7 +311,7 @@
             <div class="hand-card-wrapper">
               <div class="board-cell">
                 <div class="card">
-                  @if (gameState().hand1[pos]) {
+                  @if (gameState().hand1[pos] && gameState().hand1[pos].type !== CardType.UsedCard) {
                     <img
                       src="assets/cards/gray-card.png"
                       alt="Enemy Card"
