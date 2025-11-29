@@ -15,6 +15,8 @@ class CardType(enum.Enum):
 
 
 class PlayerState(enum.Enum):
+    Initial = 'Initial'
+    ReadyToStartGame = 'ReadyToStartGame'
     ActiveTurn = 'ActiveTurn'
     PlayedCard = 'PlayedCard'
     WaitEnemyTurn = 'WaitEnemyTurn'

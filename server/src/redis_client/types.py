@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, computed_field
@@ -22,8 +23,10 @@ class GameState(BaseModel):
     board2: List[Card] = []
     roundPoint1: int = Field(ge=0, le=3, default=0)
     roundPoint2: int = Field(ge=0, le=3, default=0)
-    Player1State: PlayerState = PlayerState.ActiveTurn
-    Player2State: PlayerState = PlayerState.WaitEnemyTurn
+    Player1State: PlayerState = PlayerState.Initial
+    Player2State: PlayerState = PlayerState.Initial
+
+    turnEndTime: float = Field(default_factory=lambda: time.time() + 60)
 
     @computed_field
     @property

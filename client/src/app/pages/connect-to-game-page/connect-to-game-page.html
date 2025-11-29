@@ -6,7 +6,7 @@
       <mat-card-header>
         <mat-card-title>Open Games</mat-card-title>
         <mat-card-subtitle>
-          Refreshes every 10 seconds
+          Refreshes every 5 seconds
         </mat-card-subtitle>
       </mat-card-header>
 
@@ -31,13 +31,18 @@
             </ng-container>
 
             <ng-container matColumnDef="creator">
-              <th mat-header-cell *matHeaderCellDef>Created by</th>
-              <td mat-cell *matCellDef="let game">Player {{ game.player1_id }}</td>
+              <th mat-header-cell *matHeaderCellDef>Your opponent</th>
+              <td mat-cell *matCellDef="let game">{{ game.player1.nickname }}</td>
             </ng-container>
 
             <ng-container matColumnDef="bid">
               <th mat-header-cell *matHeaderCellDef>Stake</th>
-              <td mat-cell *matCellDef="let game">{{ game.bid }} SOL</td>
+              <td mat-cell *matCellDef="let game">{{ game.bid }} PZK</td>
+            </ng-container>
+
+            <ng-container matColumnDef="reward">
+              <th mat-header-cell *matHeaderCellDef>Reward</th>
+              <td mat-cell *matCellDef="let game">{{ game.reward }} PZK</td>
             </ng-container>
 
             <ng-container matColumnDef="action">

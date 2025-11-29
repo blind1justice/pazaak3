@@ -24,6 +24,8 @@ class RedisClient:
             player1Id=player1_id,
             player1Name=player1_name,
             hand1=hand1,
+            Player1State=PlayerState.ActiveTurn,
+            Player2State=PlayerState.WaitEnemyTurn,
         )
         
         return self.update_game_state(game_id, game_state)

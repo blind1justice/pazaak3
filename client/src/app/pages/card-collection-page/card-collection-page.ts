@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { NftCard, NftCardsService } from '../../core/services/nft-cards-service/nft-cards-service';
-import { CardType } from '../../core/models/game/card-type';
+import { CardType } from '../../core/models/card-type';
 import { CardHelperService } from '../../core/services/card-helper-service/card-helper-service';
 import { MatCard } from '@angular/material/card';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';

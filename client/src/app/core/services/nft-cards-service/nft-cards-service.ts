@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { CardType } from '../../models/game/card-type';
+import { CardType } from '../../models/card-type';
 
 export interface DasSearchAssetsRequest {
   jsonrpc: '2.0';

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { CardType } from '../../models/game/card-type';
-import { Card } from '../../models/game/card';
+import { CardType } from '../../models/card-type';
+import { Card } from '../../models/card';
 import { NftCard } from '../nft-cards-service/nft-cards-service';
 
 @Injectable({
@@ -17,20 +17,17 @@ export class CardHelperService {
     } else if (card.type === CardType.Minus) {
       return 'assets/cards/plus-card.png';
     } else if (
-      (card.type === CardType.PlusMinus ||
-        card.type === CardType.OneOrTwoPlusMinus ||
-        card.type === CardType.ThreeOrFourPlusMinus ||
-        card.type === CardType.FiveOrSixPlusMinus)
+      (card.type === CardType.PlusMinus)
       && card.value < 0) {
       return 'assets/cards/minus-plus-card.png';
     } else if (
-      (card.type === CardType.PlusMinus ||
-        card.type === CardType.OneOrTwoPlusMinus ||
-        card.type === CardType.ThreeOrFourPlusMinus ||
-        card.type === CardType.FiveOrSixPlusMinus)
+      (card.type === CardType.PlusMinus)
       && card.value > 0) {
       return 'assets/cards/plus-minus-card.png';
-    } else if (card.type === CardType.AnyValue) {
+    } else if (card.type === CardType.AnyValue ||
+      card.type === CardType.OneOrTwoPlusMinus ||
+      card.type === CardType.ThreeOrFourPlusMinus ||
+      card.type === CardType.FiveOrSixPlusMinus) {
       return 'assets/cards/gold-card.png';
     }
     return '';
@@ -45,6 +42,9 @@ export class CardHelperService {
       case CardType.FromCommonDeck:
         return 'assets/cards/common-card.png';
       case CardType.AnyValue:
+      case CardType.OneOrTwoPlusMinus:
+      case CardType.ThreeOrFourPlusMinus:
+      case CardType.FiveOrSixPlusMinus:
         return 'assets/cards/gold-card.png';
       case CardType.PlusMinus:
       case CardType.PlusMinus1:
@@ -53,9 +53,6 @@ export class CardHelperService {
       case CardType.PlusMinus4:
       case CardType.PlusMinus5:
       case CardType.PlusMinus6:
-      case CardType.OneOrTwoPlusMinus:
-      case CardType.ThreeOrFourPlusMinus:
-      case CardType.FiveOrSixPlusMinus:
         return card.name.includes('Minus') || card.name.includes('minus')
           ? 'assets/cards/minus-plus-card.png'
           : 'assets/cards/plus-minus-card.png';

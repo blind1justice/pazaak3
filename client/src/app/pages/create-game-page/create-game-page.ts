@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,6 +9,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SocketService } from '../../core/services/socket-service/socket-service';
 import { GameService } from '../../core/services/game-service/game-service';
+import { filter, Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../../core/services/auth-service/auth-service';
 
 @Component({
   selector: 'app-create-game-page',
@@ -24,12 +26,16 @@ import { GameService } from '../../core/services/game-service/game-service';
   templateUrl: './create-game-page.html',
   styleUrl: './create-game-page.scss',
 })
-export class CreateGamePage implements OnInit {
-
+export class CreateGamePage implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
   private readonly gameService = inject(GameService);
   private readonly socketService = inject(SocketService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroy$ = new Subject<void>();
+
+  waitingForPlayer = signal(false);
+  createdGameId = signal<number | null>(null);
 
   createGameForm = new FormGroup<ICreateGameForm>({
     bid: new FormControl(0, {
@@ -38,29 +44,47 @@ export class CreateGamePage implements OnInit {
     }),
   });
 
-  ngOnInit(): void {
-    this.socketService.on<{ gameId: "123" }>('startGame').subscribe((data) => {
-      console.log(data);
-      this.router.navigate(['/game', data.gameId]);
-    });
-  }
-
   onSubmit() {
-    if (this.createGameForm.valid) {
-      const formValue = this.createGameForm.value;
-
-      this.gameService.createGame(Number(formValue.bid)).subscribe({
-        next: (room) => {
-          this.showMessage(`Room with number '${room.id}' was successfully created`);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.showMessage(err.error.detail || 'An error occurred while creating the room');
-        }
-      });
-    } else {
+    if (this.createGameForm.invalid || this.waitingForPlayer()) {
       this.createGameForm.markAllAsTouched();
       return;
     }
+
+    const bid = this.createGameForm.value.bid!;
+
+    this.gameService.createGame(bid).subscribe({
+      next: (game) => {
+        this.createdGameId.set(game.id);
+        this.waitingForPlayer.set(true);
+
+        const jwt = this.authService.getJwtToken() || '';
+
+        this.socketService.connectToGame(game.id.toString(), jwt);
+
+        this.showMessage(`Game #${game.id} created! Waiting for opponent...`);
+
+        this.socketService.status$
+          .pipe(
+            filter(status => status === 'connected'),
+            takeUntil(this.destroy$)
+          )
+          .subscribe(() => {
+            console.log('[CreateGame] Socket connected → listening for game_started');
+
+            this.socketService.on('game_started')
+              .pipe(takeUntil(this.destroy$))
+              .subscribe(() => {
+                console.log('%c[CreateGame] Game started! Redirecting...', 'color: lime');
+                this.router.navigate(['/game', game.id]);
+              });
+          });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.waitingForPlayer.set(false);
+        this.createdGameId.set(null);
+        this.showMessage(err.error?.detail || 'Failed to create game');
+      }
+    });
   }
 
   private showMessage(message: string): void {
@@ -69,5 +93,10 @@ export class CreateGamePage implements OnInit {
       horizontalPosition: 'center',
       verticalPosition: 'top'
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
