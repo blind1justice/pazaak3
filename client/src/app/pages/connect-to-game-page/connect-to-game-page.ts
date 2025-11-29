@@ -3,7 +3,7 @@ import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
 import { Router, RouterLink } from "@angular/router";
 import { GameService } from '../../core/services/game-service/game-service';
-import { catchError, interval, of, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { catchError, firstValueFrom, interval, of, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { Game } from '../../core/models/game';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
@@ -19,6 +19,7 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SocketService } from '../../core/services/socket-service/socket-service';
 import { AuthService } from '../../core/services/auth-service/auth-service';
+import { StartGameBlockchainService } from '../../core/services/blockchain-services/start-game-blockchain-service';
 
 @Component({
   selector: 'app-connect-to-game-page',
@@ -51,6 +52,7 @@ export class ConnectToGamePage implements OnDestroy {
   private readonly gameService = inject(GameService);
   private readonly socketService = inject(SocketService);
   private readonly authService = inject(AuthService);
+  private readonly startGameBlockchainService = inject(StartGameBlockchainService);
   private readonly router = inject(Router);
   private destroy$ = new Subject<void>();
   private readonly snackBar = inject(MatSnackBar);
@@ -85,26 +87,41 @@ export class ConnectToGamePage implements OnDestroy {
       .subscribe();
   }
 
-  joinGame(gameId: number) {
+  async joinGame(gameId: number) {
     this.isJoining.set(true);
 
-    this.gameService.connectToGame(gameId).subscribe({
-      next: (game) => {
-        this.socketService.connectToGame(
-          game.id.toString(),
-          this.authService.getJwtToken() || '',
-        );
+    this.isJoining.set(true);
 
-        this.router.navigate(['/game', game.id]);
-      },
-      error: (err) => {
-        this.isJoining.set(false);
-        this.showMessage(err.error?.detail || 'Failed to join game');
-      },
-      complete: () => {
-        this.isJoining.set(false);
-      },
-    });
+    try {
+      await this.startGameBlockchainService.joinGameOnChain(gameId);
+
+      const game = await firstValueFrom(this.gameService.connectToGame(gameId));
+      this.socketService.connectToGame(game.id.toString(), this.authService.getJwtToken() || '');
+
+      await this.router.navigate(['/game', game.id]);
+    } catch (err: any) {
+      this.isJoining.set(false);
+      this.showMessage(err.message || 'Failed to join on-chain');
+    }
+
+
+    // this.gameService.connectToGame(gameId).subscribe({
+    //   next: (game) => {
+    //     this.socketService.connectToGame(
+    //       game.id.toString(),
+    //       this.authService.getJwtToken() || '',
+    //     );
+    //
+    //     this.router.navigate(['/game', game.id]);
+    //   },
+    //   error: (err) => {
+    //     this.isJoining.set(false);
+    //     this.showMessage(err.error?.detail || 'Failed to join game');
+    //   },
+    //   complete: () => {
+    //     this.isJoining.set(false);
+    //   },
+    // });
   }
 
   private showMessage(message: string): void {
