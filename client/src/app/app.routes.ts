@@ -8,6 +8,7 @@ import { ProfilePage } from './pages/profile-page/profile-page';
 import { GamePage } from './pages/game-page/game-page';
 import { LoginPage } from './pages/login-page/login-page';
 import { authGuard } from './core/guards/auth-guard';
+import { LootboxesPage } from './pages/lootboxes-page/lootboxes-page';
 
 export const routes: Routes = [
   {
@@ -42,6 +43,11 @@ export const routes: Routes = [
       {
         path: 'profile',
         component: ProfilePage,
+        canMatch: [authGuard],
+      },
+      {
+        path: 'lootboxes',
+        component: LootboxesPage,
         canMatch: [authGuard],
       },
       {
