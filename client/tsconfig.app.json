@@ -6,6 +6,9 @@
     "types": ["node"],
     "outDir": "./out-tsc/app",
   },
+  "files": [
+    "src/polyfills.ts"
+  ],
   "include": [
     "src/**/*.ts"
   ],

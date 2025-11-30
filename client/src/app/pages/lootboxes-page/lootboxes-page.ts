@@ -16,9 +16,6 @@ import { OpenLootboxBlockchainService } from '../../core/services/blockchain-ser
     CommonModule,
     FormsModule,
     MatButton,
-    MatFormField,
-    MatLabel,
-    MatInput,
     MatSnackBarModule,
     RouterLink
   ],

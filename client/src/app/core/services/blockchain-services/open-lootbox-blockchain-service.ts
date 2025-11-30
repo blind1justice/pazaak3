@@ -1,28 +1,13 @@
 import { inject, Injectable, OnDestroy } from '@angular/core';
-import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { Pazaak } from '../../blockchain-types/pazaak';
-import { Connection, clusterApiUrl, PublicKey, SystemProgram } from '@solana/web3.js';
+import { AnchorProvider } from '@coral-xyz/anchor';
+import { Connection, clusterApiUrl } from '@solana/web3.js';
 import { BehaviorSubject, Subject } from 'rxjs';
 import * as anchor from '@coral-xyz/anchor';
-import { Buffer } from 'buffer';
-import idl from '../../blockchain-types/pazaak.json';
 import { WalletService } from '../wallet-service/wallet-service';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 
-import {
-  some,
-  transactionBuilder,
-  generateSigner,
-  publicKey,
-} from '@metaplex-foundation/umi';
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-
-import { mintV2, mplCandyMachine } from '@metaplex-foundation/mpl-candy-machine';
-import { setComputeUnitLimit } from '@metaplex-foundation/mpl-toolbox';
-import { TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
-
-import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
+// import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+// import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
 
 @Injectable({
   providedIn: 'root',
@@ -43,15 +28,15 @@ export class OpenLootboxBlockchainService implements OnDestroy {
   constructor() {
     toObservable(this.walletService.wallet)
       .subscribe(wallet => {
-        if (wallet?.connected && wallet.publicKey) {
-          this.initializeProvider(wallet);
-        } else {
-          this.provider = undefined;
-          this.status$.next('idle');
-          this.error$.next('Кошелёк отключён');
+          if (wallet?.connected && wallet.publicKey) {
+            this.initializeProvider(wallet);
+          } else {
+            this.provider = undefined;
+            this.status$.next('idle');
+            this.error$.next('Кошелёк отключён');
+          }
         }
-      }
-    );
+      );
   }
 
   private async initializeProvider(adapter: any) {
@@ -64,7 +49,13 @@ export class OpenLootboxBlockchainService implements OnDestroy {
     anchor.setProvider(this.provider);
     this.status$.next('connected');
     console.log('%c[Lootbox] Provider готов', 'color: lime; font-weight: bold');
-//     this.umi = createUmi(clusterApiUrl('devnet')).use(walletAdapterIdentity(adapter));
+
+    console.log('polyfills', (window as any).Stream, window.Buffer, window.process);
+
+    const { createUmi } = await import('@metaplex-foundation/umi-bundle-defaults');
+    const { walletAdapterIdentity } = await import('@metaplex-foundation/umi-signer-wallet-adapters');
+
+    this.umi = createUmi(clusterApiUrl('devnet')).use(walletAdapterIdentity(adapter));
   }
 
   async openLootboxAndMintCard(): Promise<string> {
