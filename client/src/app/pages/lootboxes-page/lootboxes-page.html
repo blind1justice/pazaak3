@@ -1,1 +1,46 @@
-<p>lootboxes-page works!</p>
+<div class="lootboxes-page">
+  <header class="page-header">
+    <h1>Lootboxes</h1>
+    <p>Откройте кейс или карточку напрямую из Solana с помощью Phantom.</p>
+  </header>
+
+  <section class="lootbox-grid">
+    <article class="lootbox-card">
+      <div class="lootbox-card__head">
+        <h3>Pazaak Case</h3>
+        <span class="lootbox-chip">Token payment</span>
+      </div>
+      <p class="lootbox-card__description">
+        Покупка кейса за PZK токены. Внутри — случайная NFT карта, которая нужна для игры и обмена.
+      </p>
+      <ul class="lootbox-card__features">
+        <li>Оплата токеном PZK</li>
+        <li>Случайная редкость</li>
+        <li>Мгновенная отправка в ваш кошелёк</li>
+      </ul>
+      <button
+        matButton
+        color="primary"
+        class="lootbox-card__action"
+        (click)="openCase()">
+        Купить Case
+      </button>
+    </article>
+
+    <article class="lootbox-card">
+      <div class="lootbox-card__head">
+        <h3>Pazaak Card</h3>
+        <span class="lootbox-chip lootbox-chip--warning">Burn case</span>
+      </div>
+      <p class="lootbox-card__description">
+        Откройте карточку, сжигая ранее купленный кейс. Укажите mint адрес Case NFT.
+      </p>
+
+    </article>
+  </section>
+
+
+  <div class="actions">
+    <button matButton routerLink="/" class="back-button">Вернуться на главную</button>
+  </div>
+</div>

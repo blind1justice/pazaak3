@@ -1,0 +1,148 @@
+.lootboxes-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.page-header {
+  text-align: center;
+
+  h1 {
+    margin: 0;
+    font-size: 2.5rem;
+  }
+
+  p {
+    margin: 12px 0 0;
+    color: #5f6368;
+  }
+}
+
+.status-card,
+.result-card {
+  border-radius: 12px;
+  padding: 20px;
+  background: #1a1a1a;
+  color: #fafafa;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25);
+}
+
+.status-text {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.status-error {
+  margin-top: 8px;
+  color: #ff6b6b;
+}
+
+.lootbox-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.lootbox-card {
+  background: #151515;
+  color: #f0f0f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  &__description {
+    margin: 0;
+    color: #bdbdbd;
+  }
+
+  &__features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    li {
+      position: relative;
+      padding-left: 20px;
+
+      &::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: #4caf50;
+      }
+    }
+  }
+
+  &__action {
+    align-self: flex-start;
+  }
+}
+
+.lootbox-chip {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+
+  &--warning {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+  }
+}
+
+.mint-input {
+  width: 100%;
+}
+
+.result-card {
+  .mono-text {
+    font-family: 'Roboto Mono', monospace;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    border-radius: 6px;
+    word-break: break-all;
+  }
+
+  .explorer-link {
+    display: inline-block;
+    margin: 12px 0;
+    color: #4fc3f7;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+.back-button {
+  min-width: 200px;
+}
+

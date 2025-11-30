@@ -1,8 +1,81 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable, OnDestroy } from '@angular/core';
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { Pazaak } from '../../blockchain-types/pazaak';
+import { Connection, clusterApiUrl, PublicKey, SystemProgram } from '@solana/web3.js';
+import { BehaviorSubject, Subject } from 'rxjs';
+import * as anchor from '@coral-xyz/anchor';
+import { Buffer } from 'buffer';
+import idl from '../../blockchain-types/pazaak.json';
+import { WalletService } from '../wallet-service/wallet-service';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+
+import {
+  some,
+  transactionBuilder,
+  generateSigner,
+  publicKey,
+} from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+
+import { mintV2, mplCandyMachine } from '@metaplex-foundation/mpl-candy-machine';
+import { setComputeUnitLimit } from '@metaplex-foundation/mpl-toolbox';
+import { TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
+
+import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
 
 @Injectable({
   providedIn: 'root',
 })
-export class OpenLootboxBlockchainService {
-  
+export class OpenLootboxBlockchainService implements OnDestroy {
+
+  private readonly walletService = inject(WalletService);
+  private provider?: AnchorProvider;
+  private umi?: any;
+
+  private status$ = new BehaviorSubject<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+  private error$ = new BehaviorSubject<string | null>(null);
+  private destroy$ = new Subject<void>();
+
+  readonly status = this.status$.asObservable();
+  readonly error = this.error$.asObservable();
+
+  constructor() {
+    toObservable(this.walletService.wallet)
+      .subscribe(wallet => {
+        if (wallet?.connected && wallet.publicKey) {
+          this.initializeProvider(wallet);
+        } else {
+          this.provider = undefined;
+          this.status$.next('idle');
+          this.error$.next('Кошелёк отключён');
+        }
+      }
+    );
+  }
+
+  private async initializeProvider(adapter: any) {
+    this.status$.next('connecting');
+
+    const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+    this.provider = new AnchorProvider(connection, adapter, {
+      preflightCommitment: 'confirmed',
+    });
+    anchor.setProvider(this.provider);
+    this.status$.next('connected');
+    console.log('%c[Lootbox] Provider готов', 'color: lime; font-weight: bold');
+//     this.umi = createUmi(clusterApiUrl('devnet')).use(walletAdapterIdentity(adapter));
+  }
+
+  async openLootboxAndMintCard(): Promise<string> {
+
+
+    return "";
+  }
+
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }
