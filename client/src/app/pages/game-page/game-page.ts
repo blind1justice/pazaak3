@@ -190,10 +190,17 @@ export class GamePage implements OnInit {
       case CardType.PlusMinus4:
       case CardType.PlusMinus5:
       case CardType.PlusMinus6:
-      case CardType.OneOrTwoPlusMinus:
-      case CardType.ThreeOrFourPlusMinus:
-      case CardType.FiveOrSixPlusMinus:
         return `±${Math.abs(card.value)} — может быть +${Math.abs(card.value)} или -${Math.abs(card.value)}`;
+
+
+      case CardType.OneOrTwoPlusMinus:
+        return `±1/2 — может быть +1/-1 или +2/-2`;
+
+      case CardType.ThreeOrFourPlusMinus:
+        return `±3/4 — может быть +3/-3 или +4/-4`;
+
+      case CardType.FiveOrSixPlusMinus:
+        return `±5/6 — может быть +5/-5 или +6/-6`;
 
       default:
         return `${card.type} (${sign}${card.value})`;
@@ -235,6 +242,7 @@ export class GamePage implements OnInit {
   }
 
   onHandCardSwapClick(card: Card) {
+    this.selectedCard.set(null);
     const state = this.gameState();
     const myHand = this.isBoardSwapped() ? state.hand2 : state.hand1;
     const index = myHand.findIndex(c =>
@@ -248,6 +256,27 @@ export class GamePage implements OnInit {
     console.log(`[Game] Swapping card at index ${index}`);
 
     this.socketService.emit('change_card_state', {index});
+  }
+
+  canSwapCard(card: Card): boolean {
+    if (!card) {
+      return true;
+    }
+
+    if (card.type === CardType.PlusMinus ||
+      card.type === CardType.PlusMinus1 ||
+      card.type === CardType.PlusMinus2 ||
+      card.type === CardType.PlusMinus3 ||
+      card.type === CardType.PlusMinus4 ||
+      card.type === CardType.PlusMinus5 ||
+      card.type === CardType.PlusMinus6 ||
+      card.type === CardType.OneOrTwoPlusMinus ||
+      card.type === CardType.ThreeOrFourPlusMinus ||
+      card.type === CardType.FiveOrSixPlusMinus) {
+      return true;
+    }
+
+    return false;
   }
 
   private getSelectedCardIndex(): number | null {

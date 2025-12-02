@@ -138,16 +138,22 @@
   object-fit: cover;
 }
 
-.card-value {
+
+.card-value-wrapper {
   position: absolute;
+  width: 56px;
   top: 37px;
-  left: 37px;
-  z-index: 10;
+  left: 17px;
+  text-align: center;
+}
+
+.card-value {
   font-size: 1.625rem;
   font-weight: bold;
   color: white;
+  text-shadow: 2px 2px 4px black;
   pointer-events: none;
-  user-select: none;
+  z-index: 10;
 }
 
 
