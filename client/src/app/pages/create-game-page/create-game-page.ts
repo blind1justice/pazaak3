@@ -6,10 +6,9 @@ import { ICreateGameForm } from './create-game-form';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { HttpErrorResponse } from '@angular/common/http';
 import { SocketService } from '../../core/services/socket-service/socket-service';
 import { GameService } from '../../core/services/game-service/game-service';
-import { filter, firstValueFrom, Subject, takeUntil } from 'rxjs';
+import { firstValueFrom, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../core/services/auth-service/auth-service';
 import { StartGameBlockchainService } from '../../core/services/blockchain-services/start-game-blockchain-service';
 
@@ -58,7 +57,7 @@ export class CreateGamePage implements OnDestroy {
     this.waitingForPlayer.set(true);
 
     try {
-      const roomId = await this.startGameBlockchainService.createGameOnChain(bid);
+      // const roomId = await this.startGameBlockchainService.createGameOnChain(bid);
 
       const game = await firstValueFrom(this.gameService.createGame(bid));
       this.createdGameId.set(game.id);
@@ -66,7 +65,6 @@ export class CreateGamePage implements OnDestroy {
       this.socketService.connectToGame(game.id.toString(), this.authService.getJwtToken() || '');
       this.showMessage(`Game #${game.id} created on-chain! Waiting...`);
 
-      // Ждём старта
       this.socketService.on('game_started').pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.router.navigate(['/game', game.id]);
       });
@@ -74,41 +72,6 @@ export class CreateGamePage implements OnDestroy {
       this.waitingForPlayer.set(false);
       this.showMessage(err.message || 'Blockchain transaction failed');
     }
-
-
-    // this.gameService.createGame(bid).subscribe({
-    //   next: (game) => {
-    //     this.createdGameId.set(game.id);
-    //     this.waitingForPlayer.set(true);
-    //
-    //     const jwt = this.authService.getJwtToken() || '';
-    //
-    //     this.socketService.connectToGame(game.id.toString(), jwt);
-    //
-    //     this.showMessage(`Game #${game.id} created! Waiting for opponent...`);
-    //
-    //     this.socketService.status$
-    //       .pipe(
-    //         filter(status => status === 'connected'),
-    //         takeUntil(this.destroy$)
-    //       )
-    //       .subscribe(() => {
-    //         console.log('[CreateGame] Socket connected → listening for game_started');
-    //
-    //         this.socketService.on('game_started')
-    //           .pipe(takeUntil(this.destroy$))
-    //           .subscribe(() => {
-    //             console.log('%c[CreateGame] Game started! Redirecting...', 'color: lime');
-    //             this.router.navigate(['/game', game.id]);
-    //           });
-    //       });
-    //   },
-    //   error: (err: HttpErrorResponse) => {
-    //     this.waitingForPlayer.set(false);
-    //     this.createdGameId.set(null);
-    //     this.showMessage(err.error?.detail || 'Failed to create game');
-    //   }
-    // });
   }
 
   private showMessage(message: string): void {

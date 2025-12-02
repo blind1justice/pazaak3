@@ -93,7 +93,7 @@ export class ConnectToGamePage implements OnDestroy {
     this.isJoining.set(true);
 
     try {
-      await this.startGameBlockchainService.joinGameOnChain(gameId);
+      // await this.startGameBlockchainService.joinGameOnChain(gameId);
 
       const game = await firstValueFrom(this.gameService.connectToGame(gameId));
       this.socketService.connectToGame(game.id.toString(), this.authService.getJwtToken() || '');
@@ -103,25 +103,6 @@ export class ConnectToGamePage implements OnDestroy {
       this.isJoining.set(false);
       this.showMessage(err.message || 'Failed to join on-chain');
     }
-
-
-    // this.gameService.connectToGame(gameId).subscribe({
-    //   next: (game) => {
-    //     this.socketService.connectToGame(
-    //       game.id.toString(),
-    //       this.authService.getJwtToken() || '',
-    //     );
-    //
-    //     this.router.navigate(['/game', game.id]);
-    //   },
-    //   error: (err) => {
-    //     this.isJoining.set(false);
-    //     this.showMessage(err.error?.detail || 'Failed to join game');
-    //   },
-    //   complete: () => {
-    //     this.isJoining.set(false);
-    //   },
-    // });
   }
 
   private showMessage(message: string): void {

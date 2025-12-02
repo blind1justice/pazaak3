@@ -1,1 +1,78 @@
-<p>profile-page works!</p>
+<div class="container">
+  <div class="content">
+    <div class="user-info-col">
+      <mat-card appearance="outlined" class="nickname-card">
+        <mat-card-header>
+          <mat-card-title>User info</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>
+            User Id: {{ userInfo()?.userId }}
+          </p>
+          <p>
+            User Nickname: {{ userInfo()?.nickname }}
+          </p>
+          <p>
+            Wallet Id: {{ userInfo()?.walletId }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="tokens-card">
+        <mat-card-header>
+          <mat-card-title>Tokens</mat-card-title>
+          <mat-card-subtitle>
+            @if (isLoading()) {
+              <span>Загрузка...</span>
+            }
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        @if (!isLoading()) {
+          <mat-card-content>
+            <table mat-table [dataSource]="tokens()" class="tokens-table">
+
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Токен</th>
+                <td mat-cell *matCellDef="let token">
+                  <div class="token-name">
+                    <strong>{{ token.name || token.symbol }}</strong>
+                    <small class="text-muted">{{ token.symbol }}</small>
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="balance">
+                <th mat-header-cell *matHeaderCellDef>Баланс</th>
+                <td mat-cell *matCellDef="let token" class="balance-cell">
+                  <strong>{{ token.uiAmount | number:'1.0-8' }}</strong>
+                  @if (token.isNative) {
+                    <span class="sol-badge">SOL</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="mint">
+                <th mat-header-cell *matHeaderCellDef>Mint</th>
+                <td mat-cell *matCellDef="let token" class="mint-cell">
+                  <div>{{ token.mint }}</div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+
+            @if (isLoading()) {
+              <div class="loading-placeholder">
+                <mat-spinner></mat-spinner>
+                <p>Загружаем баланс...</p>
+              </div>
+            }
+          </mat-card-content>
+        }
+      </mat-card>
+
+    </div>
+  </div>
+</div>
