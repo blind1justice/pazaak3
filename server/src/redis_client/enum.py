@@ -21,3 +21,5 @@ class PlayerState(enum.Enum):
     PlayedCard = 'PlayedCard'
     WaitEnemyTurn = 'WaitEnemyTurn'
     Stand = 'Stand'
+    Won = 'Won'
+    Lost = 'Lost'

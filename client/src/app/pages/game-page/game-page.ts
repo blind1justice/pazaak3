@@ -235,8 +235,19 @@ export class GamePage implements OnInit {
   }
 
   onHandCardSwapClick(card: Card) {
-    this.selectedCard.set(card);
-    console.log(card);
+    const state = this.gameState();
+    const myHand = this.isBoardSwapped() ? state.hand2 : state.hand1;
+    const index = myHand.findIndex(c =>
+      c && c.value === card.value && c.type === card.type
+    );
+    if (index === null || index === undefined) {
+      console.warn('[Game] Card not found in hand');
+      return;
+    }
+
+    console.log(`[Game] Swapping card at index ${index}`);
+
+    this.socketService.emit('change_card_state', {index});
   }
 
   private getSelectedCardIndex(): number | null {
@@ -300,6 +311,7 @@ export class GamePage implements OnInit {
 
   onStandClick() {
     console.log('onStandClick');
+    this.socketService.emit('stand');
   }
 
   onConcedeTheGameClick() {

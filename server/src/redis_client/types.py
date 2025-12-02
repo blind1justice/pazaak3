@@ -5,12 +5,51 @@ from pydantic import BaseModel, Field, computed_field
 from redis_client.enum import CardType, PlayerState
 
 
+
 class Card(BaseModel):
     type: CardType
-    value: int = Field(ge=0)
+    value: int = Field()
     state: int = Field(ge=0)
     number_of_states: int = Field(ge=1)
 
+    def change_state(self):
+        self.state = (self.state + 1) % self.number_of_states
+        match (self.type):
+            case CardType.PlusMinus:
+                self.value *= -1
+            case CardType.OneOrTwoPlusMinus:
+                if self.state == 0:
+                    self.value = 1
+                elif self.state == 1:
+                    self.value = 2
+                elif self.state == 2:
+                    self.value = -1
+                elif self.state == 3:
+                    self.value = -2
+            case CardType.ThreeOrFourPlusMinus:
+                if self.state == 0:
+                    self.value = 3
+                elif self.state == 1:
+                    self.value = 4
+                elif self.state == 2:
+                    self.value = -3
+                elif self.state == 3:
+                    self.value = -4
+            case CardType.FiveOrSixPlusMinus:
+                if self.state == 0:
+                    self.value = 5
+                elif self.state == 1:
+                    self.value = 6
+                elif self.state == 2:
+                    self.value = -5
+                elif self.state == 3:
+                    self.value = -6
+            case CardType.AnyValue:
+                if 0 <= self.state <= 5:
+                    self.value = self.state + 1
+                elif 6 <= self.state <= 11:
+                    self.value = -(self.state - 5)
+            
 
 class GameState(BaseModel):
     player1Id: int

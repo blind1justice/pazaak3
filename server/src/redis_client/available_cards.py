@@ -11,6 +11,10 @@ common_cards = {
     'common4': Card(type=CardType.FromCommonDeck, value=4, state=0, number_of_states=1),
     'common5': Card(type=CardType.FromCommonDeck, value=5, state=0, number_of_states=1),
     'common6': Card(type=CardType.FromCommonDeck, value=6, state=0, number_of_states=1),
+    'common7': Card(type=CardType.FromCommonDeck, value=7, state=0, number_of_states=1),
+    'common8': Card(type=CardType.FromCommonDeck, value=8, state=0, number_of_states=1),
+    'common9': Card(type=CardType.FromCommonDeck, value=9, state=0, number_of_states=1),
+    'common10': Card(type=CardType.FromCommonDeck, value=10, state=0, number_of_states=1),
 }
 
 available_cards = {
