@@ -9,4 +9,5 @@ pub struct GameConfig {
     pub token_treasury: Pubkey,
     #[max_len(8)] // u64
     pub token_minimal_bid: u64,
+    pub token_fee: u8
 }

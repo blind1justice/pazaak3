@@ -2,6 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Pazaak } from "../target/types/pazaak";
 import { PublicKey, Keypair } from "@solana/web3.js";
+import * as spl from "@solana/spl-token";
 
 const CONFIG_SEED = Buffer.from("pazaak-config");
 const ROOM_SEED = Buffer.from("pazaak-room");
@@ -30,11 +31,22 @@ async function main() {
     [ROOM_SEED, Buffer.from(ROOM_ID.toArray("le", 8))],
     program.programId
   );
+  const [roomTreasuryPda] = PublicKey.findProgramAddressSync(
+    [ROOM_TREASURY_SEED, Buffer.from(ROOM_ID.toArray("le", 8))],
+    program.programId
+  );
 
   let gameConfig = await program.account.gameConfig.fetch(configPda);
   let tokenMint = gameConfig.tokenMint;
 
-  // Создание комнаты (ставка уходит в roomTreasury PDA)
+  const playerTokenAccount = await spl.getAssociatedTokenAddressSync(
+    tokenMint,
+    playerKeypair.publicKey
+  );
+
+  console.log(playerTokenAccount);
+
+  // // Создание комнаты (ставка уходит в roomTreasury PDA)
   const tx = await program.methods
     .createGameRoom(ROOM_ID, TOKEN_BID, Array.from(CARDS_HASH))
     .accounts({
@@ -45,9 +57,9 @@ async function main() {
     .rpc();
   console.log("Game room created at", gameRoomPda.toBase58(), "tx", tx);
 
-  // // Вывод состояния комнаты
-  const gameRoomAccount = await program.account.gameRoom.fetch(gameRoomPda);
-  console.log("Game room account:", JSON.stringify(gameRoomAccount, null, 2));
+  // // // Вывод состояния комнаты
+  // const gameRoomAccount = await program.account.gameRoom.fetch(gameRoomPda);
+  // console.log("Game room account:", JSON.stringify(gameRoomAccount, null, 2));
 }
 
 main().catch((err) => {

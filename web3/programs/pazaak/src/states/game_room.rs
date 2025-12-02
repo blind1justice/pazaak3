@@ -27,7 +27,7 @@ pub struct BusyGameRoom {
     pub player2: Pubkey,
     pub token_bid: u64,
     pub cards_permutation_hash: [u8; 32],
-    pub vrf_seed: u32,
+    pub vrf_seed: [u8; 32],
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
@@ -36,8 +36,9 @@ pub struct FinishedGameRoom {
     pub token_bid: u64,
     pub cards_permutation_hash: [u8; 32],
     pub player2: Pubkey,
-    pub seed: u32,
+    pub vrf_seed:  [u8; 32],
     pub winner: WinnerSide,
+    pub canceled: bool,
 }
 
 
@@ -50,8 +51,8 @@ impl Space for GameRoom {
     // Рассчитываем максимальный возможный размер
     const INIT_SPACE: usize = 8 + // discriminator for enum
         // CreatedGameRoom: 32 + 8 + 32 = 72
-        // BusyGameRoom: 32 + 32 + 8 + 32 + 4 = 108
-        // FinishedGameRoom: 32 + 8 + 32 + 32 + 4 + 1 = 109 (с выравниванием до 112)
-        // Max ~112 + discriminator
-        128; // conservative estimate with padding
+        // BusyGameRoom: 32 + 32 + 8 + 32 + 32 = 136
+        // FinishedGameRoom: 32 + 8 + 32 + 32 + 32 + 1 + 1 = 138 
+        // Max ~138 + discriminator
+        138; // conservative estimate with padding
 }
