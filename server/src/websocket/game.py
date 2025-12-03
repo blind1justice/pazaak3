@@ -55,7 +55,7 @@ async def _end_game_check(game_state: GameState):
 
         if winner_side is not None:
             blockchain_service = web3_service.Web3Service()
-            tx = blockchain_service.finish_game(
+            tx = await blockchain_service.finish_game(
                 int(game_state.gameId),
                 winner=winner_side,
                 canceled=False,
@@ -526,7 +526,7 @@ async def concede(sid, data=None):
                 room_id, GameSchemaUpdate(result=GameResult.PLAYER1_WON)
             )
         blockchain_service: web3_service.Web3Service = web3_service.Web3Service()
-        tx = blockchain_service.finish_game(
+        tx = await blockchain_service.finish_game(
             int(room_id),
             winner=(
                 web3_service.WinnerSide.PLAYER2
