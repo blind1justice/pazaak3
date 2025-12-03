@@ -33,11 +33,13 @@ def _get_card_from_common_deck(game_state: GameState, is_first_player: bool):
 async def _end_game_check(game_state: GameState):
     if game_state.roundPoint1 == 3 or game_state.roundPoint2 == 3:
         game_service = GameService()
-        game_state.Player1State = PlayerState.WaitEnemyTurn
-        game_state.Player2State = PlayerState.WaitEnemyTurn
         if game_state.roundPoint1 == 3:
+            game_state.Player1State = PlayerState.Won
+            game_state.Player2State = PlayerState.Lost 
             await game_service.update_one(game_state.gameId, GameSchemaUpdate(result=GameResult.PLAYER1_WON))
         elif game_state.roundPoint2 == 3:
+            game_state.Player2State = PlayerState.Won
+            game_state.Player1State = PlayerState.Lost
             await game_service.update_one(game_state.gameId, GameSchemaUpdate(result=GameResult.PLAYER2_WON))
         return True
     return False
