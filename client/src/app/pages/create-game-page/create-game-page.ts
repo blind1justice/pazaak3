@@ -57,9 +57,11 @@ export class CreateGamePage implements OnDestroy {
     this.waitingForPlayer.set(true);
 
     try {
-      const roomId = await this.startGameBlockchainService.createGameOnChain(bid);
 
       const game = await firstValueFrom(this.gameService.createGame(bid));
+
+      const roomId = await this.startGameBlockchainService.createGameOnChain(bid, game.id);
+
       this.createdGameId.set(game.id);
 
       this.socketService.connectToGame(game.id.toString(), this.authService.getJwtToken() || '');

@@ -45,12 +45,12 @@ export class PhonkAudioPlayer {
       artist: 'INTERWORLD',
       cover: '/assets/covers/INTERWORLD-RAPTURE.jpg'
     },
-    {
-      url: '/assets/music/Shaman - Я Русский.mp3',
-      title: 'Я русский',
-      artist: 'Shaman',
-      cover: '/assets/covers/zzz.png'
-    },
+    // {
+    //   url: '/assets/music/Shaman - Я Русский.mp3',
+    //   title: 'Я русский',
+    //   artist: 'Shaman',
+    //   cover: '/assets/covers/zzz.png'
+    // },
   ];
 
   currentTrackIndex = signal(0);

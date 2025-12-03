@@ -66,7 +66,7 @@ export class StartGameBlockchainService implements OnDestroy {
     }
   }
 
-  async createGameOnChain(bid: number, roomId: number = Date.now()): Promise<number> {
+  async createGameOnChain(bid: number, roomId: number): Promise<number> {
     if (!this.program || !this.provider) {
       throw new Error('Блокчейн не готов');
     }
@@ -87,6 +87,8 @@ export class StartGameBlockchainService implements OnDestroy {
       this.program.programId
     );
 
+    console.log(gameRoomPda.toString());
+
     const [roomTreasuryPda] = PublicKey.findProgramAddressSync(
       [Buffer.from('pazaak-room-treasury'), roomIdBn.toArrayLike(Buffer, 'le', 8)],
       this.program.programId
@@ -95,22 +97,10 @@ export class StartGameBlockchainService implements OnDestroy {
     const config = await this.program.account.gameConfig.fetch(configPda);
     const tokenMint = config.tokenMint;
 
-    // ВРУЧНУЮ считаем ATA
     const playerTokenAccount = getAssociatedTokenAddressSync(
       tokenMint,
       wallet.publicKey
     );
-
-    // const config = await this.program.account.gameConfig.fetch(configPda);
-    // const tokenMint = new PublicKey('YOUR_TOKEN_MINT_HERE'); // например: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-    // const tokenMint = new PublicKey("DVv7y8qy85tQWhoxS8jfET1eABgSgrqE5M3MCr8Sg3Kd");
-
-
-    // console.log('Config PDA:', configPda.toBase58());
-    // console.log('wallet.publicKey: ', wallet.publicKey.toBase58());
-    // console.log('gameRoomPda: ', gameRoomPda.toBase58());
-    // console.log('tokenMint: ', tokenMint.toBase58())
-
 
     console.log('%c[Blockchain] Создаём комнату...', 'color: cyan');
 
@@ -122,8 +112,8 @@ export class StartGameBlockchainService implements OnDestroy {
           player: wallet.publicKey,
           config: configPda,
           gameRoom: gameRoomPda,
-          roomTreasury: roomTreasuryPda,           // ← вручную!
-          playerTokenAccount: playerTokenAccount,  // ← вручную!
+          roomTreasury: roomTreasuryPda,
+          playerTokenAccount: playerTokenAccount,
           tokenMint: tokenMint,
           tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
           systemProgram: SystemProgram.programId,
@@ -143,54 +133,53 @@ export class StartGameBlockchainService implements OnDestroy {
   }
 
   async joinGameOnChain(roomId: number): Promise<void> {
+    console.log(roomId)
+
     if (!this.program || !this.provider) {
       throw new Error('Блокчейн не готов');
     }
-  
+
     const wallet = this.walletService.wallet();
     if (!wallet?.publicKey) {
       throw new Error('Кошелёк не подключён');
     }
-  
+
     const roomIdBn = new anchor.BN(roomId);
     const force = crypto.getRandomValues(new Uint8Array(32));
-  
+
     // === Основные PDA ===
     const [configPda] = PublicKey.findProgramAddressSync(
       [CONFIG_SEED],
       this.program.programId
     );
-  
+
     const [gameRoomPda] = PublicKey.findProgramAddressSync(
       [ROOM_SEED, roomIdBn.toArrayLike(Buffer, 'le', 8)],
       this.program.programId
     );
-  
+
+    console.log(gameRoomPda.toString());
+
     const [roomTreasuryPda] = PublicKey.findProgramAddressSync(
       [Buffer.from('pazaak-room-treasury'), roomIdBn.toArrayLike(Buffer, 'le', 8)],
       this.program.programId
     );
-  
-    // === Config + Token Mint ===
+
     const config = await this.program.account.gameConfig.fetch(configPda);
     const tokenMint = config.tokenMint;
-  
-    // === Player's Token Account (ATA) ===
+
     const playerTokenAccount = getAssociatedTokenAddressSync(
       tokenMint,
       wallet.publicKey
     );
-  
-    // === VRF Адреса ===
+
     const ORAO_VRF_PROGRAM_ID = new PublicKey('VRFzZoJdhFWL8rkvu87LpKM3RbcVezpMEc6X5GVDr7y');
-    
-    // Network State (фиксированный адрес для devnet)
+
     const [vrfNetworkStatePda] = PublicKey.findProgramAddressSync(
       [Buffer.from('orao-vrf-network-configuration')],
       ORAO_VRF_PROGRAM_ID
     );
-  
-    // VRF Request PDA (от force seed)
+
     const [vrfRequestPda] = PublicKey.findProgramAddressSync(
       [Buffer.from('orao-vrf-randomness-request'), force],
       ORAO_VRF_PROGRAM_ID
@@ -205,7 +194,7 @@ export class StartGameBlockchainService implements OnDestroy {
       console.warn('Could not fetch network state, using fallback VRF treasury');
       vrfTreasury = new PublicKey('G3sY4w2eV8Laa1fZ7G8aK6Z8vDF3e5f3e5f3e5f3e5f3');
     }
-  
+
     try {
       const txSig = await this.program.methods
         .enterGameRoom(roomIdBn, Array.from(force))
@@ -224,22 +213,22 @@ export class StartGameBlockchainService implements OnDestroy {
           systemProgram: SystemProgram.programId,
         })
         .rpc();
-  
+
       console.log('%c[Blockchain] Успешно вошли в комнату!', 'color: lime; font-weight: bold');
       console.log('Транзакция:', `https://solana.fm/tx/${txSig}?cluster=devnet-solana`);
-      
+
       // Проверим обновлённое состояние комнаты
       const updatedGameRoom = await this.program.account.gameRoom.fetch(gameRoomPda);
       console.log('Обновлённое состояние комнаты:', JSON.stringify(updatedGameRoom, null, 2));
-  
+
     } catch (err: any) {
       console.error('[Blockchain] Ошибка входа в комнату:', err);
-      
+
       // Детальная диагностика ошибки
       if (err.logs) {
         console.error('Transaction logs:', err.logs);
       }
-      
+
       this.error$.next('Не удалось войти в игру');
       throw new Error(`Join game failed: ${err.message}`);
     }

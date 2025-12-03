@@ -1,5 +1,5 @@
 {
-  "address": "E2Gdsj1RKoVGPTWZVN8qvZDYtD9AXPRZBVj6nvDJJ34C",
+  "address": "HGXYnpJBx4U3vbBY4UgrkkWYqyy7mVqAbnaby3sJuLFQ",
   "metadata": {
     "name": "pazaak",
     "version": "0.1.0",
@@ -478,7 +478,7 @@
               },
               {
                 "kind": "arg",
-                "path": "force"
+                "path": "vrf_seed"
               }
             ],
             "program": {
@@ -526,6 +526,7 @@
         },
         {
           "name": "vrf_network_state",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -622,13 +623,156 @@
           "type": "u64"
         },
         {
-          "name": "force",
+          "name": "vrf_seed",
           "type": {
             "array": [
               "u8",
               32
             ]
           }
+        }
+      ]
+    },
+    {
+      "name": "finish_game",
+      "discriminator": [
+        168,
+        120,
+        86,
+        113,
+        64,
+        116,
+        2,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  122,
+                  97,
+                  97,
+                  107,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "game_room",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  122,
+                  97,
+                  97,
+                  107,
+                  45,
+                  114,
+                  111,
+                  111,
+                  109
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "room_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "room_treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  122,
+                  97,
+                  97,
+                  107,
+                  45,
+                  114,
+                  111,
+                  111,
+                  109,
+                  45,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "room_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_treasury",
+          "writable": true
+        },
+        {
+          "name": "player1_token_account",
+          "writable": true
+        },
+        {
+          "name": "player2_token_account",
+          "writable": true
+        },
+        {
+          "name": "game_authority",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "room_id",
+          "type": "u64"
+        },
+        {
+          "name": "winner_side",
+          "type": {
+            "defined": {
+              "name": "WinnerSide"
+            }
+          }
+        },
+        {
+          "name": "canceled",
+          "type": "bool"
         }
       ]
     },
@@ -699,6 +843,10 @@
         {
           "name": "token_minimal_bid",
           "type": "u64"
+        },
+        {
+          "name": "token_fee",
+          "type": "u8"
         }
       ]
     }
@@ -769,6 +917,41 @@
       "code": 6004,
       "name": "SamePlayer",
       "msg": "Same player cannot join twice"
+    },
+    {
+      "code": 6005,
+      "name": "GameNotFinishable",
+      "msg": "Game room is not in a finishable state"
+    },
+    {
+      "code": 6006,
+      "name": "NoWinner",
+      "msg": "No winner specified"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidWinnerForCancel",
+      "msg": "Invalid winner for canceled game"
+    },
+    {
+      "code": 6008,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidWinnerAccount",
+      "msg": "Invalid winner token account owner"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidPlayerAccount",
+      "msg": "Invalid player token account owner"
+    },
+    {
+      "code": 6011,
+      "name": "MissingBump",
+      "msg": "Missing bump for PDA"
     }
   ],
   "types": [
@@ -800,7 +983,12 @@
           },
           {
             "name": "vrf_seed",
-            "type": "u32"
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }
@@ -857,8 +1045,13 @@
             "type": "pubkey"
           },
           {
-            "name": "seed",
-            "type": "u32"
+            "name": "vrf_seed",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "winner",
@@ -867,6 +1060,10 @@
                 "name": "WinnerSide"
               }
             }
+          },
+          {
+            "name": "canceled",
+            "type": "bool"
           }
         ]
       }
@@ -895,6 +1092,10 @@
           {
             "name": "token_minimal_bid",
             "type": "u64"
+          },
+          {
+            "name": "token_fee",
+            "type": "u8"
           }
         ]
       }

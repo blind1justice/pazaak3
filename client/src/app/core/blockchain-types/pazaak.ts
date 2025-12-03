@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/pazaak.json`.
  */
 export type Pazaak = {
-  "address": "E2Gdsj1RKoVGPTWZVN8qvZDYtD9AXPRZBVj6nvDJJ34C",
+  "address": "HGXYnpJBx4U3vbBY4UgrkkWYqyy7mVqAbnaby3sJuLFQ",
   "metadata": {
     "name": "pazaak",
     "version": "0.1.0",
@@ -484,7 +484,7 @@ export type Pazaak = {
               },
               {
                 "kind": "arg",
-                "path": "force"
+                "path": "vrfSeed"
               }
             ],
             "program": {
@@ -532,6 +532,7 @@ export type Pazaak = {
         },
         {
           "name": "vrfNetworkState",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -628,13 +629,156 @@ export type Pazaak = {
           "type": "u64"
         },
         {
-          "name": "force",
+          "name": "vrfSeed",
           "type": {
             "array": [
               "u8",
               32
             ]
           }
+        }
+      ]
+    },
+    {
+      "name": "finishGame",
+      "discriminator": [
+        168,
+        120,
+        86,
+        113,
+        64,
+        116,
+        2,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  122,
+                  97,
+                  97,
+                  107,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gameRoom",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  122,
+                  97,
+                  97,
+                  107,
+                  45,
+                  114,
+                  111,
+                  111,
+                  109
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "roomId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "roomTreasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  122,
+                  97,
+                  97,
+                  107,
+                  45,
+                  114,
+                  111,
+                  111,
+                  109,
+                  45,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "roomId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenTreasury",
+          "writable": true
+        },
+        {
+          "name": "player1TokenAccount",
+          "writable": true
+        },
+        {
+          "name": "player2TokenAccount",
+          "writable": true
+        },
+        {
+          "name": "gameAuthority",
+          "signer": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "roomId",
+          "type": "u64"
+        },
+        {
+          "name": "winnerSide",
+          "type": {
+            "defined": {
+              "name": "winnerSide"
+            }
+          }
+        },
+        {
+          "name": "canceled",
+          "type": "bool"
         }
       ]
     },
@@ -705,6 +849,10 @@ export type Pazaak = {
         {
           "name": "tokenMinimalBid",
           "type": "u64"
+        },
+        {
+          "name": "tokenFee",
+          "type": "u8"
         }
       ]
     }
@@ -775,6 +923,41 @@ export type Pazaak = {
       "code": 6004,
       "name": "samePlayer",
       "msg": "Same player cannot join twice"
+    },
+    {
+      "code": 6005,
+      "name": "gameNotFinishable",
+      "msg": "Game room is not in a finishable state"
+    },
+    {
+      "code": 6006,
+      "name": "noWinner",
+      "msg": "No winner specified"
+    },
+    {
+      "code": 6007,
+      "name": "invalidWinnerForCancel",
+      "msg": "Invalid winner for canceled game"
+    },
+    {
+      "code": 6008,
+      "name": "mathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6009,
+      "name": "invalidWinnerAccount",
+      "msg": "Invalid winner token account owner"
+    },
+    {
+      "code": 6010,
+      "name": "invalidPlayerAccount",
+      "msg": "Invalid player token account owner"
+    },
+    {
+      "code": 6011,
+      "name": "missingBump",
+      "msg": "Missing bump for PDA"
     }
   ],
   "types": [
@@ -806,7 +989,12 @@ export type Pazaak = {
           },
           {
             "name": "vrfSeed",
-            "type": "u32"
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }
@@ -863,8 +1051,13 @@ export type Pazaak = {
             "type": "pubkey"
           },
           {
-            "name": "seed",
-            "type": "u32"
+            "name": "vrfSeed",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "winner",
@@ -873,6 +1066,10 @@ export type Pazaak = {
                 "name": "winnerSide"
               }
             }
+          },
+          {
+            "name": "canceled",
+            "type": "bool"
           }
         ]
       }
@@ -901,6 +1098,10 @@ export type Pazaak = {
           {
             "name": "tokenMinimalBid",
             "type": "u64"
+          },
+          {
+            "name": "tokenFee",
+            "type": "u8"
           }
         ]
       }
