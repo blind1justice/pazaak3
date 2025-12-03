@@ -10,7 +10,7 @@ from services.user_service import UserService
 from redis_client.client import RedisClient
 from redis_client.enum import CardType, PlayerState
 from schemas.game import GameSchemaUpdate
-from redis_client.available_cards import available_cards, common_cards, blank_card
+from redis_client.available_cards import available_cards, common_cards, blank_card, simple_cards
 from random import sample, choice
 from time import time
 
@@ -147,12 +147,19 @@ async def connect(sid, environ):
     await sio.enter_room(sid, room_id)
 
     redis_client = RedisClient()
+    raw_deck = redis_client.get_deck(user)
+    if raw_deck:
+        deck = []
+        for card in raw_deck.cards:
+            deck.append(available_cards[card.value])
+    else:
+        deck = list(simple_cards.values())
 
     if not redis_client.get_game_state(room_id):
         await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id, 'is_first_player': True})
-        redis_client.create_game(room_id, user_id, user.nickname, sample(list(available_cards.values()), 4), game.bid, game.reward)
+        redis_client.create_game(room_id, user_id, user.nickname, user.walletId, sample(deck, 4), game.bid, game.reward)
     elif not redis_client.get_game_state(room_id).player2Id:
-        redis_client.connect_to_game(room_id, user_id, user.nickname, sample(list(available_cards.values()), 4))
+        redis_client.connect_to_game(room_id, user_id, user.nickname, user.walletId, sample(deck, 4))
         await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id, 'is_first_player': False})
         await game_service.update_one(room_id, GameSchemaUpdate(result=GameResult.IN_PROGRESS))
         await sio.emit('game_started', {

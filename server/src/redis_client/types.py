@@ -3,8 +3,7 @@ import time
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, computed_field
-from redis_client.enum import CardType, PlayerState
-
+from redis_client.enum import CardType, PlayerState, AnotherCardType
 
 
 class Card(BaseModel):
@@ -50,7 +49,26 @@ class Card(BaseModel):
                     self.value = self.state + 1
                 elif 6 <= self.state <= 11:
                     self.value = -(self.state - 5)
-            
+
+
+class Collection(BaseModel):
+    player1Id: int
+    player1Name: str
+    player1WalletId: str
+    cards: List[AnotherCardType] = (
+        [AnotherCardType.Plus1] * 2 + [AnotherCardType.Plus2] * 2 + [AnotherCardType.Plus3] * 2 +
+        [AnotherCardType.Plus4] * 2 + [AnotherCardType.Plus5] * 2 + [AnotherCardType.Plus6] * 2 +
+        [AnotherCardType.Minus1] * 2 + [AnotherCardType.Minus2] * 2 + [AnotherCardType.Minus3] * 2 +
+        [AnotherCardType.Minus3] * 2 + [AnotherCardType.Minus4] * 2 + [AnotherCardType.Minus5] * 2
+    )
+
+
+class Deck(BaseModel):
+    player1Id: int
+    player1Name: str
+    player1WalletId: str
+    cards: List[AnotherCardType] = []
+
 
 class GameState(BaseModel):
     gameId: int
@@ -58,6 +76,8 @@ class GameState(BaseModel):
     player2Id: Optional[int] = None
     player1Name: str
     player2Name: Optional[str] = None
+    player1WalletId: str
+    player2WalletId: Optional[str] = None
     hand1: List[Card]
     hand2: List[Card] = []
     board1: List[Card] = []
