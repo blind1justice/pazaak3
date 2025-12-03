@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>{{ getTitle() }}</h2>
+<mat-dialog-content class="dialog-content">
+  <div class="result-summary">
+    <div class="score-row">
+      <div class="score-item">
+        <strong>{{ data.playerName }}</strong>
+        <span class="score">{{ data.myScore }}</span>
+      </div>
+      <div class="score-item">
+        <strong>{{ data.opponentName }}</strong>
+        <span class="score">{{ data.opponentScore }}</span>
+      </div>
+    </div>
+
+    <div class="bid-reward">
+      <div class="bid-info">
+        <span class="label">Ставка:</span>
+        <span class="amount">{{ data.bid }} PZK</span>
+      </div>
+      <div class="reward-info">
+        <span class="label">Награда победителю:</span>
+        <span class="amount">{{ data.reward }} PZK</span>
+      </div>
+    </div>
+
+    @if (data.transactionId) {
+      <div class="transaction-info">
+        <span class="label">Транзакция:</span>
+        <a mat-button
+           [href]="'https://solscan.io/tx/' + data.transactionId + '?cluster=devnet'"
+           target="_blank"
+           class="tx-link">
+          Посмотреть на Solscan
+        </a>
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-raised-button color="primary" mat-dialog-close cdkFocusInitial (click)="goToMainMenu()">
+    В главное меню
+  </button>
+</mat-dialog-actions>

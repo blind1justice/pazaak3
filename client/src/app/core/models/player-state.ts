@@ -5,4 +5,6 @@ export enum PlayerState {
   PlayedCard = 'PlayedCard',
   WaitEnemyTurn = 'WaitEnemyTurn',
   Stand = 'Stand',
+  Won = 'Won',
+  Lost = 'Lost',
 }

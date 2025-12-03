@@ -24,4 +24,8 @@ export interface GameState {
   Player2State: PlayerState;
 
   turnEndTime: number;
+
+  bid: number;
+  reward: number;
+  transactionId: string | null;
 }

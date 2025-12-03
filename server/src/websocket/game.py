@@ -404,8 +404,12 @@ async def concede(sid, data=None):
         game_state.Player2State = PlayerState.WaitEnemyTurn
         if is_first_player:
             game_state.roundPoint2 = 3
+            game_state.Player2State = PlayerState.Won
+            game_state.Player1State = PlayerState.Lost
         else:
             game_state.roundPoint1 = 3
+            game_state.Player1State = PlayerState.Won
+            game_state.Player2State = PlayerState.Lost
         redis_client.update_game_state(room_id, game_state)
 
         await sio.emit('current_state', {

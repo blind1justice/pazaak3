@@ -1,5 +1,5 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GameService } from '../../core/services/game-service/game-service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { GameState } from '../../core/models/game-state';
@@ -13,6 +13,8 @@ import { filter, interval, take } from 'rxjs';
 import { AuthService } from '../../core/services/auth-service/auth-service';
 import { PlayerState } from '../../core/models/player-state';
 import { CardType } from '../../core/models/card-type';
+import { EndGameDialog } from '../../features/end-game-dialog/end-game-dialog';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-game-page',
@@ -28,6 +30,8 @@ import { CardType } from '../../core/models/card-type';
 export class GamePage implements OnInit {
   private destroyRef = inject(DestroyRef);
 
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly gameService = inject(GameService);
   private readonly cardHelperService = inject(CardHelperService);
@@ -87,7 +91,7 @@ export class GamePage implements OnInit {
 
   ngOnInit() {
     const gameId = this.route.snapshot.paramMap.get('gameId')!;
-    const jwt = localStorage.getItem('jwt') || '';
+    const jwt = this.authService.getJwtToken() || '';
 
     this.socketService.connectToGame(gameId, jwt);
 
@@ -96,6 +100,9 @@ export class GamePage implements OnInit {
       .subscribe((data: any) => {
         const state: GameState = JSON.parse(data.game_state);
         this.gameState.set(state);
+
+        this.checkEndGame();
+
         this.updateTimer();
         console.log('[GamePage] State updated:', state);
       });
@@ -107,13 +114,13 @@ export class GamePage implements OnInit {
     this.socketService.on('reconnected')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        console.log('[GamePage] Reconnected — no need to send ready');
+        console.log('[GamePage] Reconnected');
       });
 
     this.socketService.on('game_started')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        console.log('[GamePage] Game started — sending ready');
+        console.log('[GamePage] Game started');
         this.socketService.sendReadyToStart();
       });
 
@@ -136,7 +143,79 @@ export class GamePage implements OnInit {
       });
   }
 
-  private updateTimer() {
+  checkEndGame() {
+    const state = this.gameState();
+    if (!state) {
+      return;
+    }
+
+    const myId = this.authService.currentUserId();
+    const isPlayer1 = state.player1Id === myId;
+
+    if (this.isGameFinished(state)) {
+      this.remainingTime.set(0);
+      this.showEndGameDialog(state);
+    }
+  }
+
+  private isGameFinished(state: GameState): boolean {
+    const myId = this.authService.currentUserId();
+    const isPlayer1 = state.player1Id === myId;
+    const myState = isPlayer1 ? state.Player1State : state.Player2State;
+    const opponentState = isPlayer1 ? state.Player2State : state.Player1State;
+
+    return (
+      (myState === PlayerState.Stand && opponentState === PlayerState.Stand) ||
+      myState === PlayerState.Won ||
+      myState === PlayerState.Lost ||
+      opponentState === PlayerState.Won ||
+      opponentState === PlayerState.Lost
+    );
+  }
+
+  private showEndGameDialog(state: GameState) {
+    const myId = this.authService.currentUserId();
+    const isPlayer1 = state.player1Id === myId;
+    const myName = isPlayer1 ? state.player1Name : state.player2Name;
+    const opponentName = isPlayer1 ? state.player2Name : state.player1Name;
+
+    const myScore = isPlayer1 ? state.roundPoint1 : state.roundPoint2;
+    const opponentScore = isPlayer1 ? state.roundPoint2 : state.roundPoint1;
+
+    const myState = isPlayer1 ? state.Player1State : state.Player2State;
+    const opponentState = isPlayer1 ? state.Player2State : state.Player1State;
+
+    const dialogData = {
+      playerName: myName,
+      opponentName: opponentName,
+      myScore,
+      opponentScore,
+      myState,
+      opponentState,
+      bid: state.bid,
+      reward: state.reward,
+      transactionId: state.transactionId,
+      myId,
+      gameId: state.gameId,
+    };
+
+    const dialogRef = this.dialog.open(EndGameDialog, {
+      width: '480px',
+      data: dialogData,
+      panelClass: 'end-game-dialog',
+    });
+
+    dialogRef.afterClosed().subscribe({
+        next: (result: any) => {
+          if (result?.action === 'Ok') {
+            this.router.navigate(['/']);
+          }
+        }
+      }
+    );
+  }
+
+  updateTimer() {
     const state = this.gameState();
     if (!state?.turnEndTime) {
       this.remainingTime.set(0);
@@ -175,13 +254,15 @@ export class GamePage implements OnInit {
     const sign = card.value >= 0 ? '+' : '';
 
     switch (card.type) {
-      case CardType.AnyValue:
       case CardType.Plus:
       case CardType.Minus:
         return `${sign}${card.value} — обычная карта с фиксированным значением`;
 
       case CardType.FromCommonDeck:
         return `${sign}${card.value} — карта из колоды с фиксированным значением`;
+
+      case CardType.AnyValue:
+        return `±1..6 — может быть +1/-1, +2/-2 ... +6/-6`;
 
       case CardType.PlusMinus:
       case CardType.PlusMinus1:
@@ -207,7 +288,7 @@ export class GamePage implements OnInit {
     }
   }
 
-  onSelectCardClick(card: Card): void {
+  onSelectCardClick(card: Card) {
     if (!card) {
       this.selectedCard.set(null);
       return;
@@ -272,14 +353,16 @@ export class GamePage implements OnInit {
       card.type === CardType.PlusMinus6 ||
       card.type === CardType.OneOrTwoPlusMinus ||
       card.type === CardType.ThreeOrFourPlusMinus ||
-      card.type === CardType.FiveOrSixPlusMinus) {
+      card.type === CardType.FiveOrSixPlusMinus ||
+      card.type === CardType.AnyValue) {
       return true;
     }
 
     return false;
   }
 
-  private getSelectedCardIndex(): number | null {
+
+  getSelectedCardIndex(): number | null {
     const state = this.gameState();
     const card = this.selectedCard();
     if (!state || !card) return null;
@@ -339,12 +422,10 @@ export class GamePage implements OnInit {
   }
 
   onStandClick() {
-    console.log('onStandClick');
     this.socketService.emit('stand');
   }
 
   onConcedeTheGameClick() {
-    console.log('onConcedeTheGameClick');
     this.socketService.emit('concede');
   }
 

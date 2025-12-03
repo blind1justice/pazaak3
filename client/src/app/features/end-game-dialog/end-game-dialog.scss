@@ -1,0 +1,79 @@
+.dialog-content {
+  padding: 24px;
+  max-width: 480px;
+}
+
+.result-summary {
+  text-align: center;
+}
+
+.score-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px 0;
+  padding: 20px;
+  gap: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 1.25rem;
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.score {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.bid-reward {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  gap: 70px;
+  font-size: 1.25rem;
+}
+
+.bid-info, .reward-info {
+  text-align: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.label {
+  display: block;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.amount {
+  padding: 10px 0 0 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.transaction-info {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(0, 255, 163, 0.1);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.tx-link {
+  text-decoration: none !important;
+  color: #00ffa3 !important;
+}
+
+.tx-link:hover {
+  text-decoration: underline !important;
+}

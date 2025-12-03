@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { CardType } from '../../models/card-type';
+import { AuthService } from '../auth-service/auth-service';
 
 export interface DasSearchAssetsRequest {
   jsonrpc: '2.0';
@@ -78,18 +79,21 @@ export interface DasSearchAssetsResponse {
 })
 export class NftCardsService {
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
   private readonly rpcUrl = 'https://api.devnet.solana.com';
   private readonly ownerAddress = '3Y89vAQJyGbH2NrGMxocyPsCDHs2NsJihdnrV9zdZKcq';
   private readonly collectionAddress = 'GZPjAZnG5LmZAmpKrpBZmidAM4KsqCAzp8h5FCJNSgUL';
 
   getNftCardsCollection(): Observable<NftCard[]> {
+    const walletId = this.authService.currentWalletId();
+
     const payload: DasSearchAssetsRequest = {
       jsonrpc: '2.0',
       id: 1,
       method: 'searchAssets',
       params: {
         grouping: ['collection', this.collectionAddress],
-        ownerAddress: this.ownerAddress,
+        ownerAddress: walletId || '',
         limit: 100,
         burnt: false,
       }
