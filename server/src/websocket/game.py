@@ -65,6 +65,8 @@ async def _end_game_check(game_state: GameState):
                 winner=winner_side,
                 canceled=False,
             )
+            print("Transaction ID:")
+            print(tx)
             await blockchain_service.close_client()
         return True
     return False
@@ -547,6 +549,8 @@ async def concede(sid, data=None):
             ),
             canceled=False,
         )
+        print("Transaction ID:")
+        print(tx)
         await blockchain_service.close_client()
 
     except Exception as e:

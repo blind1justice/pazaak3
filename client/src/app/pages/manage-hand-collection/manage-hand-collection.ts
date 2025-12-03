@@ -52,11 +52,7 @@ export class ManageHandCollection {
         value: this.extractValue(type),
       }));
 
-      // console.log(allCards);
-
       this.availableCards.set(allCards);
-
-      console.log(this.availableCards());
 
       const currentDeck = (deckResp?.cards || []).map((type: string) => {
         return allCards.find(c => c.type === type) || {
@@ -75,6 +71,9 @@ export class ManageHandCollection {
   }
 
   private extractValue(type: string): number {
+    if (type === "ThreeOrFourPlusMinus") {
+      return 3;
+    }
     const match = type.match(/(Plus|Minus|PlusMinus)(\d+)/);
     if (!match) return 0;
     const sign = match[1] === 'Minus' ? -1 : 1;
@@ -82,10 +81,17 @@ export class ManageHandCollection {
   }
 
   getCardImagePath(card: CardInstance): string {
+    if (card.type === "ThreeOrFourPlusMinus") {
+      return 'assets/cards/gold-card.png'
+    }
     const match = card.type.toLowerCase();
 
-    if (match.startsWith('plus') && !match.includes('minus')) return 'assets/cards/plus-card.png';
-    if (match.startsWith('minus') && !match.includes('plus')) return 'assets/cards/minus-card.png';
+    if (match.startsWith('plus') && !match.includes('minus')) {
+      return 'assets/cards/plus-card.png';
+    }
+    if (match.startsWith('minus') && !match.includes('plus')) {
+      return 'assets/cards/minus-card.png';
+    }
     if (match.includes('plusminus')) {
       return match.includes('minus') || card.value < 0
         ? 'assets/cards/minus-plus-card.png'

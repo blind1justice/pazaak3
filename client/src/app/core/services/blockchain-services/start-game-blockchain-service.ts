@@ -78,7 +78,7 @@ export class StartGameBlockchainService implements OnDestroy {
     }
 
     const roomIdBn = new anchor.BN(roomId);
-    const tokenBidBn = new anchor.BN(bid * 1_000_000);
+    const tokenBidBn = new anchor.BN(bid * 100_000_000);
     const cardsHash = new Uint8Array(32).fill(1);
 
     const [configPda] = PublicKey.findProgramAddressSync([CONFIG_SEED], this.program.programId);
