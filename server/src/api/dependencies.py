@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from services.user_service import UserService
 from services.game_service import GameService
+from services.collection_service import CollectionService
 from utils.jwt import verify_token
 from schemas.user import UserSchemaRead
 
@@ -15,6 +16,10 @@ def user_service():
 
 def game_service():
     return GameService()
+
+
+def collection_service():
+    return CollectionService() 
 
 
 async def get_current_user(

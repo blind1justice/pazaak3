@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from api import user, game, auth
+from api import user, game, auth, collection
 from websocket.game import socket_app
 
 
@@ -19,6 +19,7 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(game.router)
 app.include_router(auth.router)
+app.include_router(collection.router)
 app.mount("/socket.io", socket_app)
 
 
