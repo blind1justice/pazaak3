@@ -345,6 +345,7 @@ export class GamePage implements OnInit {
 
   onConcedeTheGameClick() {
     console.log('onConcedeTheGameClick');
+    this.socketService.emit('concede');
   }
 
   protected readonly CardType = CardType;

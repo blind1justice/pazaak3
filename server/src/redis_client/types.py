@@ -52,6 +52,7 @@ class Card(BaseModel):
             
 
 class GameState(BaseModel):
+    gameId: int
     player1Id: int
     player2Id: Optional[int] = None
     player1Name: str

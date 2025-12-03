@@ -22,45 +22,30 @@ sio = AsyncServer(async_mode='asgi', cors_allowed_origins=["http://localhost:420
 socket_app = socketio.ASGIApp(sio)
 
 
-def _get_card_from_common_deck(is_first_player: bool, room_id):
+def _get_card_from_common_deck(game_state: GameState, is_first_player: bool):
     card = choice(list(common_cards.values()))
-    redis_client = RedisClient()
-    game_state = redis_client.get_game_state(room_id)
     if is_first_player:
         game_state.board1.append(card)
     else:
         game_state.board2.append(card)
-    redis_client.update_game_state(room_id, game_state)
+
+    
+async def _end_game_check(game_state: GameState):
+    if game_state.roundPoint1 == 3 or game_state.roundPoint2 == 3:
+        game_service = GameService()
+        game_state.Player1State = PlayerState.WaitEnemyTurn
+        game_state.Player2State = PlayerState.WaitEnemyTurn
+        if game_state.roundPoint1 == 3:
+            await game_service.update_one(game_state.gameId, GameSchemaUpdate(result=GameResult.PLAYER1_WON))
+        elif game_state.roundPoint2 == 3:
+            await game_service.update_one(game_state.gameId, GameSchemaUpdate(result=GameResult.PLAYER2_WON))
+        return True
+    return False
 
 
-async def _end_game(game_state: GameState, room_id):
-    game_service = GameService()
-    if game_state.roundPoint1 == 3:
-        await game_service.update_one(room_id, GameSchemaUpdate(result=GameResult.PLAYER1_WON))
-    elif game_state.roundPoint2 == 3:
-        await game_service.update_one(room_id, GameSchemaUpdate(result=GameResult.PLAYER2_WON))
-
-
-def _calculate_result(game_state: GameState):
-    if game_state.board2sum > 20 or game_state.board1sum > game_state.board2sum:
-        game_state.roundPoint1 += 1
-        # if game_state.roundPoint1 == 3:
-        #     game_state.Player1State = PlayerState.Won
-        #     game_state.Player2State = PlayerState.Lost
-        #     return True
-        # else: 
-        #     return False
-    if game_state.board1sum > 20 or game_state.board2sum > game_state.board1sum:
-        game_state.roundPoint2 += 1
-        # if game_state.roundPoint2 == 3:
-        #     game_state.Player1State = PlayerState.Lost
-        #     game_state.Player2State = PlayerState.Won
-        #     return True
-        # else:
-        #     return False
-
-
-def _start_turn_for_player(game_state: GameState, is_first_player: bool):
+async def _start_new_round(game_state: GameState, is_first_player: bool):
+    game_state.board1 = []
+    game_state.board2 = []
     game_state.turnEndTime = time() + TURN_DURATION
     if is_first_player:
         game_state.Player1State = PlayerState.ActiveTurn
@@ -68,31 +53,62 @@ def _start_turn_for_player(game_state: GameState, is_first_player: bool):
     else:
         game_state.Player1State = PlayerState.WaitEnemyTurn
         game_state.Player2State = PlayerState.ActiveTurn
+    _get_card_from_common_deck(game_state, is_first_player)
 
 
+async def _calculate_result(game_state: GameState):
+    if game_state.board1sum > game_state.board2sum:
+        game_state.roundPoint1 += 1
+        if not await _end_game_check(game_state):
+            await _start_new_round(game_state, False)
+    elif game_state.board2sum > game_state.board1sum:
+        game_state.roundPoint2 += 1
+        if not await _end_game_check(game_state):
+            await _start_new_round(game_state, True)
+    else:
+        await _start_new_round(game_state, choice([True, False]))
 
-def _stand_for_player(game_state: GameState, is_first_player: bool):
+
+async def _end_turn_for_player(game_state: GameState, is_first_player: bool):
     game_state.turnEndTime = time() + TURN_DURATION
     if is_first_player:
-        game_state.Player1State = PlayerState.Stand
-        if game_state.board1sum > 20 or game_state.Player2State == PlayerState.Stand:
-            return True
-        else:
-            game_state.Player2State = PlayerState.ActiveTurn
-            return False
+        if game_state.board1sum > 20:
+            game_state.roundPoint2 += 1
+            if not await _end_game_check(game_state):
+                await _start_new_round(game_state, is_first_player)
+        elif game_state.Player1State in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
+            if game_state.Player2State == PlayerState.Stand:
+                game_state.Player1State = PlayerState.ActiveTurn
+                _get_card_from_common_deck(game_state, is_first_player)
+            else:
+                game_state.Player1State = PlayerState.WaitEnemyTurn
+                game_state.Player2State = PlayerState.ActiveTurn
+                _get_card_from_common_deck(game_state, not is_first_player)
+        elif game_state.Player1State == PlayerState.Stand:
+            if game_state.Player2State == PlayerState.Stand:
+                await _calculate_result(game_state)
+            else:
+                game_state.Player2State = PlayerState.ActiveTurn
+                _get_card_from_common_deck(game_state, not is_first_player)
     else:
-        game_state.Player2State = PlayerState.Stand
-        if game_state.board2sum > 20 or game_state.Player1State == PlayerState.Stand:
-            return True
-        else:
-            game_state.Player1State = PlayerState.ActiveTurn
-            return False
-        
-
-def _start_new_round(game_state: GameState, is_first_player: bool):
-    game_state.board1 = []
-    game_state.board2 = []
-    _start_turn_for_player(game_state, is_first_player)
+        if game_state.board2sum > 20:
+            game_state.roundPoint1 += 1
+            if not await _end_game_check(game_state):
+                await _start_new_round(game_state, is_first_player)
+        elif game_state.Player2State in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
+            if game_state.Player1State == PlayerState.Stand:
+                game_state.Player2State = PlayerState.ActiveTurn
+                _get_card_from_common_deck(game_state, is_first_player)
+            else:
+                game_state.Player2State = PlayerState.WaitEnemyTurn
+                game_state.Player1State = PlayerState.ActiveTurn
+                _get_card_from_common_deck(game_state, not is_first_player)
+        elif game_state.Player2State == PlayerState.Stand:
+            if game_state.Player1State == PlayerState.Stand:
+                await _calculate_result(game_state)
+            else:
+                game_state.Player1State = PlayerState.ActiveTurn
+                _get_card_from_common_deck(game_state, not is_first_player)
 
 
 @sio.event
@@ -125,13 +141,10 @@ async def connect(sid, environ):
     
     user_service = UserService()
     user = await user_service.get_one(user_id)
-
     
     await sio.enter_room(sid, room_id)
 
     redis_client = RedisClient()
-
-    # clients_in_room = sio.manager.rooms['/'].get(room_id)
 
     if not redis_client.get_game_state(room_id):
         await sio.save_session(sid, {'room_id': room_id, 'user_id': user_id, 'is_first_player': True})
@@ -144,7 +157,9 @@ async def connect(sid, environ):
             'your_id': user_id,
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, room=room_id)
-        _get_card_from_common_deck(True, room_id)
+        game_state = redis_client.get_game_state(room_id)
+        await _start_new_round(game_state, True)
+        redis_client.update_game_state(room_id, game_state)
         await sio.emit('current_state', {
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, room=room_id)
@@ -193,9 +208,6 @@ async def game_ready_to_start(sid):
     # Если оба готовы — шлём состояние
     if game_state.Player1State == PlayerState.ReadyToStartGame and game_state.Player2State == PlayerState.ReadyToStartGame:
         print(f"[SIO] Both players ready! Starting game in room {room_id}")
-
-        _start_turn_for_player(game_state, True)
-        redis_client.update_game_state(room_id, game_state)
         
         await sio.emit('game_started', {
             'game_state': game_state.model_dump_json()
@@ -287,41 +299,16 @@ async def end_turn(sid, data=None):
         
         if not is_first_player and game_state.Player2State not in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
             return 
-
-        if is_first_player and game_state.board1sum > 20 or not is_first_player and game_state.board2sum > 20:
-            game_end = _calculate_result(game_state)
-            redis_client.update_game_state(room_id, game_state)
-            await sio.emit('current_state', {
-                'game_state': redis_client.get_game_state(room_id).model_dump_json()
-            }, room=room_id)
-            await asyncio.sleep(3)
-            _start_new_round(game_state, not is_first_player)
-            redis_client.update_game_state(room_id, game_state)
-            await sio.emit('current_state', {
-                'game_state': redis_client.get_game_state(room_id).model_dump_json()
-            }, room=room_id)
-
-        if (is_first_player and game_state.Player2State == PlayerState.Stand):
-            game_state.Player1State = PlayerState.ActiveTurn
-            game_state.turnEndTime = time() + TURN_DURATION
-            redis_client.update_game_state(room_id, game_state)
-            _get_card_from_common_deck(not is_first_player, room_id)
-        elif not is_first_player and game_state.Player1State == PlayerState.Stand:
-            game_state.Player2State = PlayerState.ActiveTurn
-            game_state.turnEndTime = time() + TURN_DURATION
-            redis_client.update_game_state(room_id, game_state)
-            _get_card_from_common_deck(not is_first_player, room_id)
-        else:
-            _start_turn_for_player(game_state, not is_first_player)
-            redis_client.update_game_state(room_id, game_state)
-            _get_card_from_common_deck(not is_first_player, room_id)
+        
+        await _end_turn_for_player(game_state, is_first_player)
+        redis_client.update_game_state(room_id, game_state)
 
         await sio.emit('current_state', {
             'game_state': redis_client.get_game_state(room_id).model_dump_json()
         }, room=room_id)
 
     except Exception as e:
-        print(f"Play card error: {e}")  
+        print(f"End turn error: {e}")  
 
 
 @sio.event
@@ -343,35 +330,22 @@ async def stand(sid, data=None):
         
         if not is_first_player and game_state.Player2State not in [PlayerState.ActiveTurn, PlayerState.PlayedCard]:
             return 
-
-        turn_end = _stand_for_player(game_state, is_first_player)
-        redis_client.update_game_state(room_id, game_state)
-        if not turn_end:
-            _get_card_from_common_deck(not is_first_player, room_id)
-            await sio.emit('current_state', {
-                'game_state': redis_client.get_game_state(room_id).model_dump_json()
-            }, room=room_id)
+        
+        if is_first_player:
+            game_state.Player1State = PlayerState.Stand
         else:
-            game_end = _calculate_result(game_state)
-            redis_client.update_game_state(room_id, game_state)
-            await sio.emit('current_state', {
-                'game_state': redis_client.get_game_state(room_id).model_dump_json()
-            }, room=room_id)
-            await asyncio.sleep(3)
-            _start_new_round(game_state, is_first_player)
-            redis_client.update_game_state(room_id, game_state)
-            _get_card_from_common_deck(is_first_player, room_id)
-            await sio.emit('current_state', {
-                'game_state': redis_client.get_game_state(room_id).model_dump_json()
-            }, room=room_id)
-        #     # if game_end:
-        #     #     await _end_game(game_state, room_id)
-        #     # else:
-        #     #     pass
+            game_state.Player2State = PlayerState.Stand
+
+        await _end_turn_for_player(game_state, is_first_player)
+        redis_client.update_game_state(room_id, game_state)
+
+        await sio.emit('current_state', {
+            'game_state': redis_client.get_game_state(room_id).model_dump_json()
+        }, room=room_id)
 
 
     except Exception as e:
-        print(f"Play card error: {e}")  
+        print(f"Stand error: {e}")  
 
 
 @sio.event
@@ -408,4 +382,40 @@ async def change_card_state(sid, data):
         }, room=room_id)
 
     except Exception as e:
-        print(f"Play card error: {e}")  
+        print(f"Change card error: {e}")  
+
+@sio.event
+async def concede(sid, data=None):
+    try:
+        session = await sio.get_session(sid)
+        room_id = session.get('room_id')
+        user_id = session.get('user_id')
+        is_first_player = session.get('is_first_player')
+
+        if not room_id:
+            return
+        
+        redis_client = RedisClient()
+        game_state = redis_client.get_game_state(room_id)
+
+        game_state.Player1State = PlayerState.WaitEnemyTurn
+        game_state.Player2State = PlayerState.WaitEnemyTurn
+        if is_first_player:
+            game_state.roundPoint2 = 3
+        else:
+            game_state.roundPoint1 = 3
+        redis_client.update_game_state(room_id, game_state)
+
+        await sio.emit('current_state', {
+            'game_state': redis_client.get_game_state(room_id).model_dump_json()
+        }, room=room_id)
+
+        game_service = GameService()
+        
+        if is_first_player:
+            await game_service.update_one(room_id, GameSchemaUpdate(result=GameResult.PLAYER2_WON))
+        else:
+            await game_service.update_one(room_id, GameSchemaUpdate(result=GameResult.PLAYER1_WON))
+        
+    except Exception as e:
+        print(f"Concede error: {e}")  

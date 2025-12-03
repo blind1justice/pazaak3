@@ -21,6 +21,7 @@ class RedisClient:
     def create_game(self, game_id: int, player1_id: int, player1_name: str,
                    hand1: List[Card]) -> bool:
         game_state = GameState(
+            gameId=game_id,
             player1Id=player1_id,
             player1Name=player1_name,
             hand1=hand1,

@@ -11,6 +11,15 @@
             </div>
           }
         </div>
+        @if (gameState().Player1State === PlayerState.Stand) {
+          <div class="stand-status">
+            <mat-card appearance="outlined" class="stand-card">
+              <mat-card-content class="stand-content">
+                STAND
+              </mat-card-content>
+            </mat-card>
+          </div>
+        }
       </div>
       <div class="game-outer-container">
         <div class="top-bar">
@@ -369,6 +378,15 @@
             </div>
           }
         </div>
+        @if (gameState().Player1State === PlayerState.Stand) {
+          <div class="stand-status">
+            <mat-card appearance="outlined" class="stand-card">
+              <mat-card-content class="stand-content">
+                STAND
+              </mat-card-content>
+            </mat-card>
+          </div>
+        }
       </div>
     }
   </div>
